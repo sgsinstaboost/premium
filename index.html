@@ -190,6 +190,13 @@
                 </div>
 
                 <p class="text-xs text-center text-slate-400 mt-4">Unregistered Node? <span id="trigger-signup-btn" class="text-rose-400 font-bold cursor-pointer hover:underline">Create New Account</span></p>
+
+                <!-- Footer Legal Policy Links on Login Page -->
+                <div class="mt-4 pt-3 border-t border-slate-800/40 flex items-center justify-center space-x-4 text-[10px] text-slate-500 font-mono">
+                    <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-privacy-login">Privacy Policy</span>
+                    <span>•</span>
+                    <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-terms-login">Terms of Agreement</span>
+                </div>
             </div>
 
             <!-- Signup Form view -->
@@ -355,7 +362,7 @@
 
                         <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
                             <span class="hover:underline cursor-pointer" id="btn-show-privacy-2">Privacy Policy</span>
-                            <span class="hover:underline cursor-pointer" id="btn-show-terms-2">SLA Terms</span>
+                            <span class="hover:underline cursor-pointer" id="btn-show-terms-2">Terms-of-Agreement</span>
                         </div>
                     </div>
                 </div>
@@ -629,7 +636,7 @@
                 </div>
                 <div class="flex items-center gap-6">
                     <span class="hover:text-slate-300 cursor-pointer" id="btn-show-privacy-3">Privacy Policy</span>
-                    <span class="hover:text-slate-300 cursor-pointer" id="btn-show-terms-3">SLA Standards</span>
+                    <span class="hover:text-slate-300 cursor-pointer" id="btn-show-terms-3">Terms-of-Agreement</span>
                 </div>
             </div>
         </footer>
@@ -783,16 +790,16 @@
     </div>
 
     <!-- Dynamic Policy Modal Overlay -->
-    <div id="legalModalOverlay" class="fixed inset-0 bg-[#030712]/90 z-50 hidden items-center justify-center p-4 backdrop-blur-md">
-        <div class="glass-panel max-w-lg w-full rounded-[32px] p-5 sm:p-7 space-y-5 relative max-h-[80vh] overflow-y-auto border-slate-800/80 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800/60 pb-3">
+    <div id="legalModalOverlay" class="fixed inset-0 bg-[#030712]/90 z-[100] hidden items-center justify-center p-4 backdrop-blur-md">
+        <div class="glass-panel max-w-2xl w-full rounded-[32px] p-5 sm:p-7 space-y-5 relative max-h-[85vh] overflow-y-auto border-slate-800/80 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800/60 pb-3 sticky top-0 bg-[#0d1220]/90 backdrop-blur-md z-10 pt-1">
                 <h3 id="legalModalTitle" class="text-sm sm:text-base font-black uppercase text-white tracking-wider flex items-center space-x-2"></h3>
                 <button id="legal-close-btn" class="text-slate-400 hover:text-rose-500 p-1 hover:bg-slate-900 rounded-lg transition"><i class="fa-solid fa-xmark text-lg"></i></button>
             </div>
-            <div id="legalModalContent" class="text-xs text-slate-400 leading-relaxed space-y-3 font-mono">
+            <div id="legalModalContent" class="text-xs text-slate-300 leading-relaxed space-y-4 font-sans">
             </div>
-            <div class="pt-3 border-t border-slate-800/60 flex justify-end">
-                <button id="legal-acknowledge-btn" class="px-5 py-2 bg-[#0d1220] hover:bg-slate-900 border border-slate-800 text-[10px] font-bold text-slate-200 uppercase tracking-widest rounded-xl transition">Acknowledge</button>
+            <div class="pt-3 border-t border-slate-800/60 flex justify-end sticky bottom-0 bg-[#0d1220]/90 backdrop-blur-md pb-1">
+                <button id="legal-acknowledge-btn" class="px-5 py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-[10px] font-bold text-white uppercase tracking-widest rounded-xl transition shadow-md">Acknowledge & Accept</button>
             </div>
         </div>
     </div>
@@ -1898,29 +1905,113 @@
         const btnDesktopSecurity = document.getElementById('btn-desktop-security');
         if(btnDesktopSecurity) btnDesktopSecurity.addEventListener('click', () => window.showSecurityInfo());
 
-        // Policy Modal
+        // Policy Modal Integration
         window.showPolicy = function(type) {
             const titleEl = document.getElementById('legalModalTitle');
             const contentEl = document.getElementById('legalModalContent');
             const modal = document.getElementById('legalModalOverlay');
             
             if(type === 'privacy') {
-                titleEl.innerHTML = `<i class="fa-solid fa-user-shield text-emerald-500"></i><span>SGS Engine Privacy Directives (SLA)</span>`;
+                titleEl.innerHTML = `<i class="fa-solid fa-user-shield text-emerald-400"></i><span>SGS InstaBoost - Official Privacy Policy</span>`;
                 contentEl.innerHTML = `
                     <div class="space-y-4">
-                        <p class="font-bold text-white">Directive 1.0: Cryptographic States</p>
-                        <p>We secure your identity targets and profile transaction records strictly through modern database shards.</p>
-                        <p class="font-bold text-white">Directive 2.0: Instant Clearance</p>
-                        <p>Our deposits system operates under strict verification protocols.</p>
+                        <p class="text-slate-400"><strong>Effective Date:</strong> July 24, 2026 | <strong>Last Updated:</strong> July 24, 2026</p>
+                        
+                        <p>Welcome to <strong>SGS InstaBoost</strong> ("we," "our," or "us"). We respect user privacy and are committed to complying with Google Play Developer Policies, User Data Policies, and global data protection standards.</p>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">1. Information We Collect</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                            <li><strong>Account Information:</strong> When you register using Email and Password, we collect only your <strong>Registered Email Address</strong>. Password credentials are stored in secure hashed format.</li>
+                            <li><strong>Wallet & Order Records:</strong> We track in-app wallet balance, deposit history, and order logs to process promotional management services.</li>
+                            <li><strong>Device Diagnostics:</strong> Basic non-identifiable parameters (e.g., OS version, device model, IP address) are logged for app stability and fraud prevention.</li>
+                        </ul>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">2. Services & Promotional Compliance</h4>
+                        <p class="text-slate-300">SGS InstaBoost is a third-party social media marketing management tool and analytics utility platform that assists users in managing campaign orders via provider APIs.</p>
+                        <div class="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-200">
+                            <strong>Service Guidelines:</strong>
+                            <ul class="list-disc pl-5 space-y-1 mt-1 text-xs">
+                                <li>We do NOT sell, manipulate, or artificially generate engagement in violation of platform terms.</li>
+                                <li>Our application functions strictly as an order submission interface using secure third-party provider APIs.</li>
+                                <li>We do not request or store passwords or personal tokens of any third-party social media profiles.</li>
+                            </ul>
+                        </div>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">3. How We Use Your Data</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                            <li>To manage your account, authenticate user access via Email and Password, and maintain live wallet balances.</li>
+                            <li>To fulfill order requests via third-party service provider APIs.</li>
+                            <li>To process customer support queries and payment verification requests.</li>
+                            <li>To enforce platform security and prevent unauthorized activity.</li>
+                        </ul>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">4. Data Storage & Security</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                            <li><strong>Google Firebase Infrastructure:</strong> All user credentials and database entries are stored securely on Google Firebase Authentication and Realtime Database.</li>
+                            <li><strong>Encryption:</strong> Data transmitted between the app and servers is encrypted using standard SSL/TLS protocols.</li>
+                        </ul>
+
+                        <div class="bg-rose-500/10 border-l-4 border-rose-500 p-3 rounded text-rose-200 space-y-2">
+                            <h4 class="font-bold text-white text-sm">5. Account Deletion & Data Removal Policy (Mandatory)</h4>
+                            <p class="text-xs">In accordance with Google Play's User Data Policy, all users have the right to request the deletion of their account and associated personal data.</p>
+                            <p class="text-xs"><strong>How to Request Account & Data Deletion:</strong></p>
+                            <ul class="list-disc pl-5 space-y-1 text-xs">
+                                <li>Send an email to: <strong>contactsgsinstaboost@gmail.com</strong></li>
+                                <li>Subject line: <strong>"Account Deletion Request - SGS InstaBoost"</strong></li>
+                                <li>Include your registered <strong>Email Address</strong> in the body of the message.</li>
+                            </ul>
+                            <p class="text-xs">Upon verification, your credentials, Email, Wallet History, and Activity Logs are permanently purged from Firebase within <strong>7 business days</strong>.</p>
+                        </div>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">6. Contact Support</h4>
+                        <p class="text-slate-300">Support Email: <a href="mailto:contactsgsinstaboost@gmail.com" class="text-rose-400 underline">contactsgsinstaboost@gmail.com</a></p>
                     </div>`;
             } else {
-                titleEl.innerHTML = `<i class="fa-solid fa-scale-balanced text-rose-500"></i><span>SGS SLA Platform Standards</span>`;
+                titleEl.innerHTML = `<i class="fa-solid fa-scale-balanced text-amber-400"></i><span>Terms of Agreement (Terms of Service)</span>`;
                 contentEl.innerHTML = `
                     <div class="space-y-4">
-                        <p class="font-bold text-white">SLA Standard 1.1: Refills</p>
-                        <p>Standard views and followers packages have precise guaranteed features.</p>
-                        <p class="font-bold text-white">SLA Standard 1.2: Refunds</p>
-                        <p>Verify destinations URLs and UTR IDs thoroughly before triggering clearance reports.</p>
+                        <p class="text-slate-400"><strong>Effective Date:</strong> July 24, 2026 | <strong>Last Updated:</strong> July 24, 2026</p>
+                        
+                        <p>Welcome to <strong>SGS InstaBoost</strong>. Please read these Terms of Agreement ("Terms", "Agreement") carefully before using our mobile application. By creating an account or using any service, you agree to be bound by these legal terms.</p>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">1. Acceptance of Terms</h4>
+                        <p class="text-slate-300">By accessing or using SGS InstaBoost, you confirm that you are at least 18 years of age and possess legal authority to enter into this agreement.</p>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">2. Account Registration & Security</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                            <li>Accounts are created using Email/Password or Google Sign-In. You are responsible for maintaining confidentiality.</li>
+                            <li>You are fully responsible for all activities and transactions executed under your registered account.</li>
+                        </ul>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">3. Service Description & API Usage</h4>
+                        <p class="text-slate-300">SGS InstaBoost operates as a social media growth management service platform processing requests using provider APIs:</p>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                            <li><strong>Public Profiles:</strong> Target accounts or links submitted must be public. We are not responsible for delays caused by private profiles.</li>
+                            <li><strong>Service Fluctuations:</strong> Due to continuous algorithm updates on social platforms, delivery speed and retention rates may vary.</li>
+                        </ul>
+
+                        <div class="bg-rose-500/10 border-l-4 border-rose-500 p-3 rounded text-rose-200">
+                            <strong>Non-Affiliation Disclaimer:</strong> SGS InstaBoost is an independent third-party utility platform. We are NOT affiliated, associated, authorized, endorsed by, or in any way officially connected with Meta Platforms Inc. (Instagram, Facebook), Google LLC (YouTube), or any of their subsidiaries.
+                        </div>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">4. Wallet Deposits & Refunds</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                            <li><strong>Wallet Balance:</strong> Funds deposited are used strictly to place service orders within the application.</li>
+                            <li><strong>Failed Transactions:</strong> If a payment is deducted but fails to update your app wallet balance, contact us at <strong>contactsgsinstaboost@gmail.com</strong> with your UTR Number and Payment Screenshot for manual verification within 24–48 hours.</li>
+                            <li><strong>Fraudulent Chargebacks:</strong> Fraudulent disputes will lead to immediate, permanent account termination.</li>
+                        </ul>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">5. Prohibited Activities</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-300">
+                            <li>Attempting to bypass or reverse-engineer the mobile application or backend Firebase infrastructure.</li>
+                            <li>Exploiting bugs or system glitches to manipulate wallet balances artificially.</li>
+                        </ul>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">6. Limitation of Liability</h4>
+                        <p class="text-slate-300">SGS InstaBoost and its developers shall not be liable for any indirect damages resulting from the use or inability to use our app services.</p>
+
+                        <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">7. Contact Information</h4>
+                        <p class="text-slate-300">Official Email: <a href="mailto:contactsgsinstaboost@gmail.com" class="text-amber-400 underline">contactsgsinstaboost@gmail.com</a></p>
                     </div>`;
             }
             modal.classList.remove('hidden');
@@ -1941,7 +2032,7 @@
             contentEl.innerHTML = `
                 <div class="space-y-4">
                     <p class="font-bold text-white">Cryptographic Node Auditing</p>
-                    <p>Your authentication is handled securely via cloud API integrations.</p>
+                    <p class="text-slate-300">Your authentication is handled securely via Google Firebase cloud API integrations protected with 256-bit SSL encryption standards.</p>
                 </div>`;
             modal.classList.remove('hidden');
             modal.classList.add('flex');
@@ -1949,6 +2040,14 @@
 
         document.getElementById('btn-show-privacy').addEventListener('click', () => window.showPolicy('privacy'));
         document.getElementById('btn-show-terms').addEventListener('click', () => window.showPolicy('terms'));
+        
+        // Login Page triggers
+        const btnLoginPrivacy = document.getElementById('btn-show-privacy-login');
+        if (btnLoginPrivacy) btnLoginPrivacy.addEventListener('click', () => window.showPolicy('privacy'));
+        
+        const btnLoginTerms = document.getElementById('btn-show-terms-login');
+        if (btnLoginTerms) btnLoginTerms.addEventListener('click', () => window.showPolicy('terms'));
+
         document.getElementById('btn-show-privacy-2').addEventListener('click', () => window.showPolicy('privacy'));
         document.getElementById('btn-show-terms-2').addEventListener('click', () => window.showPolicy('terms'));
         document.getElementById('btn-show-privacy-3').addEventListener('click', () => window.showPolicy('privacy'));
@@ -2043,7 +2142,7 @@
                 <button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-slate-300 transition text-[10px] focus:outline-none"><i class="fa-solid fa-xmark"></i></button>
             `;
             
-container.appendChild(toast);
+            container.appendChild(toast);
             setTimeout(() => {
                 if (toast && toast.parentElement) {
                     toast.style.opacity = '0';
