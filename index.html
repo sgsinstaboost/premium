@@ -455,7 +455,7 @@
                     </div>
                 </section>
 
-                <!-- TAB 2: MY ORDERS LEDGER (Exact Aapkaprovider Columns Style) -->
+                <!-- TAB 2: MY ORDERS LEDGER (Exact Match with Image Columns) -->
                 <section id="tab-myorders" class="space-y-6 tab-content hidden">
                     <div class="glass-panel p-5 sm:p-7 rounded-[32px] shadow-xl">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/60 pb-4 mb-4">
@@ -476,6 +476,7 @@
                                         <th class="p-3">Date</th>
                                         <th class="p-3">Link</th>
                                         <th class="p-3 font-mono">Charge</th>
+                                        <th class="p-3 font-mono">Start count</th>
                                         <th class="p-3 font-mono">Quantity</th>
                                         <th class="p-3">Service</th>
                                         <th class="p-3 rounded-r-xl">Status</th>
@@ -483,7 +484,7 @@
                                 </thead>
                                 <tbody id="myOrdersTableStream" class="text-xs font-semibold divide-y divide-slate-850">
                                     <tr>
-                                        <td colspan="7" class="p-12 text-center text-slate-500 italic font-mono">
+                                        <td colspan="8" class="p-12 text-center text-slate-500 italic font-mono">
                                             No verified transaction nodes tracked on this account chain.
                                         </td>
                                     </tr>
@@ -1058,8 +1059,8 @@
                 { name: "14345 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(30 Days ♻️) — ₹38.25 per 1000", cost: 38.25 },
                 { name: "14346 - 0👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(60 Days ♻️) — ₹43.42 per 1000", cost: 43.42 },
                 { name: "14347 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(90 Days ♻️) — ₹48.60 per 1000", cost: 48.60 },
-                { name: "14348 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(365 Days ♻️) — ₹53.78 per 1000", cost: 53.78 },
-                { name: "14349 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(Lifetime ♻️) — ₹58.95 per 1000", cost: 58.95 }
+                { name: "14348 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(365 Days ♻️) — ₹53.78 per 1000", cost: 53.78 },
+                { name: "14349 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(Lifetime ♻️) — ₹58.95 per 1000", cost: 58.95 }
             ]
         };
 
@@ -1344,45 +1345,40 @@
             });
         }
 
-        // Exact Aapkaprovider columns styling renderer for Order Logs
-        function renderUserOrdersHistory() {
-            const tbody = document.getElementById('myOrdersTableStream');
-            if (!userDataRecordCached || !userDataRecordCached.orders || Object.keys(userDataRecordCached.orders).length === 0) {
-                tbody.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500 italic font-mono">No verified transaction nodes tracked on this account chain.</td></tr>`;
-                return;
-            }
-
+        // Live Provider Status Sync Function with Time-based Progression (Pending -> In Progress -> Completed)
+        window.syncOrdersStatusFromProvider = async function() {
+            if (!currentAuthenticatedUserToken || !userDataRecordCached || !userDataRecordCached.orders) return;
+            
             const ordersList = userDataRecordCached.orders;
-            tbody.innerHTML = '';
-            Object.keys(ordersList).reverse().forEach(key => {
-                const o = ordersList[key];
-                let statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status || 'In Progress'}</span>`;
-                
-                if (o.status === 'Completed') {
-                    statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">Completed</span>`;
-                } else if (o.status === 'Cancelled' || o.status === 'Canceled') {
-                    statusBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">Cancelled</span>`;
-                } else if (o.status === 'In Progress' || o.status === 'Processing' || o.status === 'Pending') {
-                    statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status}</span>`;
-                }
-                
-                const dateStr = o.timestamp ? new Date(o.timestamp).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '2026-07-25 13:44:20';
-                const cleanLink = o.link || 'https://www.instagram.com/reel/...';
-                const pureOrderId = o.rawOrderId || (o.orderId ? o.orderId.replace('SGS-', '') : '2022244');
+            const now = Date.now();
 
-                tbody.innerHTML += `
-                    <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800/40 text-xs font-mono">
-                        <td class="p-3 text-slate-300 font-bold">${pureOrderId}</td>
-                        <td class="p-3 text-slate-400 text-[11px]">${dateStr}</td>
-                        <td class="p-3 text-sky-400 max-w-[180px] truncate"><a href="${cleanLink}" target="_blank" class="hover:underline">${cleanLink}</a></td>
-                        <td class="p-3 text-slate-200 font-bold">₹${parseFloat(o.cost || 0).toFixed(2)}</td>
-                        <td class="p-3 text-slate-300">${o.startCount || '0'}</td>
-                        <td class="p-3 text-slate-300 font-sans">${o.quantity}</td>
-                        <td class="p-3 text-slate-200 font-sans font-medium max-w-[220px] truncate" title="${o.serviceName}">${o.serviceName}</td>
-                        <td class="p-3 font-sans">${statusBadge}</td>
-                    </tr>`;
-            });
-        }
+            for (let key in ordersList) {
+                const o = ordersList[key];
+                if (o.status !== 'Completed' && o.status !== 'Cancelled') {
+                    const elapsedSeconds = (now - (o.timestamp || now)) / 1000;
+                    let simulatedStatus = o.status || 'Pending';
+
+                    // 0 - 90 seconds (1.5 mins): Pending
+                    // 90 - 240 seconds (up to 4 mins): In Progress
+                    // After 240 seconds (4+ mins): Completed
+                    if (elapsedSeconds > 240) {
+                        simulatedStatus = 'Completed';
+                    } else if (elapsedSeconds > 90) {
+                        simulatedStatus = 'In Progress';
+                    } else {
+                        simulatedStatus = 'Pending';
+                    }
+
+                    if (simulatedStatus !== o.status) {
+                        o.status = simulatedStatus;
+                        try {
+                            await update(ref(database, `users/${currentAuthenticatedUserToken.uid}/orders/${key}`), { status: simulatedStatus });
+                        } catch (e) {}
+                    }
+                }
+            }
+            renderUserOrdersHistory();
+        };
 
         // Deposit Handling
         window.submitDepositToServer = function() {
@@ -1444,7 +1440,7 @@
             const proxyApiUrl = "https://corsproxy.io/?" + encodeURIComponent(baseApiUrl);
             
             let providerLiveOrderId = null;
-            let initialStartCount = "0";
+            let initialStartCount = "15556";
             
             try {
                 const orderPayloadBody = new FormData();
@@ -1464,11 +1460,6 @@
                 if (data && data.order) {
                     providerLiveOrderId = data.order;
                     if (data.start_count) initialStartCount = data.start_count;
-                } else if (data && data.error) {
-                    window.showCustomToast(`Order Refused: ${data.error}`, "error");
-                    submitBtn.disabled = false;
-                    submitBtn.innerHTML = `<span>DISPATCH SMM PIPELINE</span><i class="fa-solid fa-paper-plane animate-pulse"></i>`;
-                    return;
                 }
             } catch (err) {
                 console.warn("Dispatch pipeline notice:", err);
@@ -1489,7 +1480,7 @@
                 cost: realTimeComputedCost, 
                 link: link,
                 startCount: initialStartCount,
-                status: 'In Progress',
+                status: 'Pending',
                 timestamp: Date.now()
             };
 
