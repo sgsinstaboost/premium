@@ -455,7 +455,7 @@
                     </div>
                 </section>
 
-                <!-- TAB 2: MY ORDERS LEDGER (Exact Match with Image Columns) -->
+                <!-- TAB 2: MY ORDERS LEDGER -->
                 <section id="tab-myorders" class="space-y-6 tab-content hidden">
                     <div class="glass-panel p-5 sm:p-7 rounded-[32px] shadow-xl">
                         <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/60 pb-4 mb-4">
@@ -1345,7 +1345,7 @@
             });
         }
 
-        // Live Provider Status Sync Function with Time-based Progression (Pending -> In Progress -> Completed)
+        // Exact time-based logic: 0-30s = Pending, 30s-2m = In Progress, After 2m = Completed
         window.syncOrdersStatusFromProvider = async function() {
             if (!currentAuthenticatedUserToken || !userDataRecordCached || !userDataRecordCached.orders) return;
             
@@ -1358,14 +1358,11 @@
                     const elapsedSeconds = (now - (o.timestamp || now)) / 1000;
                     let simulatedStatus = o.status || 'Pending';
 
-                    // 0 - 90 seconds (1.5 mins): Pending
-                    // 90 - 240 seconds (up to 4 mins): In Progress
-                    // After 240 seconds (4+ mins): Completed
-                    if (elapsedSeconds > 240) {
+                    if (elapsedSeconds > 120) { // After 2 minutes (120 seconds)
                         simulatedStatus = 'Completed';
-                    } else if (elapsedSeconds > 90) {
+                    } else if (elapsedSeconds > 30) { // After 30 seconds up to 2 mins
                         simulatedStatus = 'In Progress';
-                    } else {
+                    } else { // First 30 seconds
                         simulatedStatus = 'Pending';
                     }
 
@@ -1378,6 +1375,46 @@
                 }
             }
             renderUserOrdersHistory();
+        };
+
+        // Render User Orders History (Exact Aapkaprovider Columns Style)
+        window.renderUserOrdersHistory = function renderUserOrdersHistory() {
+            const tbody = document.getElementById('myOrdersTableStream');
+            if (!userDataRecordCached || !userDataRecordCached.orders || Object.keys(userDataRecordCached.orders).length === 0) {
+                tbody.innerHTML = `<tr><td colspan="8" class="p-12 text-center text-slate-500 italic font-mono">No verified transaction nodes tracked on this account chain.</td></tr>`;
+                return;
+            }
+
+            const ordersList = userDataRecordCached.orders;
+            tbody.innerHTML = '';
+            Object.keys(ordersList).reverse().forEach(key => {
+                const o = ordersList[key];
+                let statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status || 'Pending'}</span>`;
+                
+                if (o.status === 'Completed') {
+                    statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">Completed</span>`;
+                } else if (o.status === 'Cancelled' || o.status === 'Canceled') {
+                    statusBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">Cancelled</span>`;
+                } else if (o.status === 'In Progress' || o.status === 'Processing' || o.status === 'Pending') {
+                    statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status}</span>`;
+                }
+                
+                const dateStr = o.timestamp ? new Date(o.timestamp).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '2026-07-25 13:44:20';
+                const cleanLink = o.link || 'https://www.instagram.com/reel/...';
+                const pureOrderId = o.rawOrderId || (o.orderId ? o.orderId.replace('SGS-', '') : '2022244');
+
+                tbody.innerHTML += `
+                    <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800/40 text-xs font-mono">
+                        <td class="p-3 text-slate-300 font-bold">${pureOrderId}</td>
+                        <td class="p-3 text-slate-400 text-[11px]">${dateStr}</td>
+                        <td class="p-3 text-sky-400 max-w-[180px] truncate"><a href="${cleanLink}" target="_blank" class="hover:underline">${cleanLink}</a></td>
+                        <td class="p-3 text-slate-200 font-bold">₹${parseFloat(o.cost || 0).toFixed(2)}</td>
+                        <td class="p-3 text-slate-300">${o.startCount || '0'}</td>
+                        <td class="p-3 text-slate-300 font-sans">${o.quantity}</td>
+                        <td class="p-3 text-slate-200 font-sans font-medium max-w-[220px] truncate" title="${o.serviceName}">${o.serviceName}</td>
+                        <td class="p-3 font-sans">${statusBadge}</td>
+                    </tr>`;
+            });
         };
 
         // Deposit Handling
@@ -1457,6 +1494,15 @@
                     res = await fetch(baseApiUrl, { method: "POST", body: orderPayloadBody });
                 }
                 const data = await res.json();
+                
+                if (data && data.error) {
+                    // SAFEGUARD: Agar provider error de (jaise active order exist karta ho), to wallet se ek paisa bhi nahi katega!
+                    window.showCustomToast(`Order Refused: ${data.error}. Balance not deducted.`, "error");
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = `<span>DISPATCH SMM PIPELINE</span><i class="fa-solid fa-paper-plane animate-pulse"></i>`;
+                    return;
+                }
+
                 if (data && data.order) {
                     providerLiveOrderId = data.order;
                     if (data.start_count) initialStartCount = data.start_count;
@@ -1469,7 +1515,7 @@
                 providerLiveOrderId = Math.floor(100000 + Math.random() * 900000);
             }
 
-            // Execute Immediate Instant Order Logging and Balance Deduction
+            // Execute Immediate Instant Order Logging and Balance Deduction ONLY ON SUCCESSFUL API RESPONSE
             const uniqueOrderKey = 'order_' + Date.now();
             const cleanServiceName = selectedServiceName.split('—')[0].trim();
             const orderPayloadData = { 
@@ -1499,7 +1545,7 @@
                 }
 
                 document.getElementById('userBalance').innerText = updatedUserBalancePostOrder.toFixed(2);
-                renderUserOrdersHistory();
+                window.renderUserOrdersHistory();
 
                 // Show Success Banner
                 const banner = document.getElementById('topSuccessBanner');
