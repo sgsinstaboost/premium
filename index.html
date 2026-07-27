@@ -2255,6 +2255,83 @@
         // Initialize Services & Default Tab
         window.updateServices();
         window.switchTab('dashboard');
+
+
+
+
+
+
+        
+
+// --- App Guide & Tutorial Injection Code ---
+(() => {
+    const openTutorial = () => {
+        window.open('https://example.com', '_blank');
+    };
+
+    const createTutorialBtn = (id) => {
+        const wrapper = document.createElement('div');
+        wrapper.className = 'pt-3 px-2 w-full';
+        wrapper.innerHTML = `
+            <button id="${id}" type="button" class="w-full py-3.5 bg-gradient-to-r from-sky-600 via-indigo-600 to-sky-600 hover:from-sky-500 hover:to-indigo-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-lg flex items-center justify-center space-x-2 transition active:scale-[0.98]">
+                <i class="fa-solid fa-circle-play text-amber-400 text-base animate-pulse"></i>
+                <span>App Guide & Tutorial</span>
+            </button>
+        `;
+        return wrapper;
+    };
+
+    const injectAppTutorialButtons = () => {
+        // 1. Login Page Injection
+        const loginForm = document.querySelector('#loginForm');
+        if (loginForm && !document.getElementById('btn-app-tutorial-login')) {
+            const btn = createTutorialBtn('btn-app-tutorial-login');
+            loginForm.appendChild(btn);
+            document.getElementById('btn-app-tutorial-login')?.addEventListener('click', openTutorial);
+        }
+
+        // 2. Drawer Side Panel Injection (YouTube Button ke Just Niche)
+        if (!document.getElementById('btn-app-tutorial-drawer')) {
+            // Aapke Drawer ka YouTube Social Button
+            const ytSocialBtn = document.getElementById('btn-yt-social');
+
+            if (ytSocialBtn) {
+                // Agar 2-column grid me YT button ke saath Instagram bhi hai, to poore grid container ke niche add karega
+                const targetContainer = ytSocialBtn.closest('.grid') || ytSocialBtn;
+                const btn = createTutorialBtn('btn-app-tutorial-drawer');
+                targetContainer.parentNode.insertBefore(btn, targetContainer.nextSibling);
+                document.getElementById('btn-app-tutorial-drawer')?.addEventListener('click', openTutorial);
+            } else {
+                // Fallback: Directly inside #sideDrawer
+                const drawer = document.getElementById('sideDrawer');
+                if (drawer) {
+                    const btn = createTutorialBtn('btn-app-tutorial-drawer');
+                    drawer.appendChild(btn);
+                    document.getElementById('btn-app-tutorial-drawer')?.addEventListener('click', openTutorial);
+                }
+            }
+        }
+    };
+
+    // Initial Execute
+    injectAppTutorialButtons();
+
+    // Observe DOM changes (Login ke baad Drawer open/render hone par auto-trigger)
+    const observer = new MutationObserver(() => injectAppTutorialButtons());
+    observer.observe(document.body, { childList: true, subtree: true });
+})();
+
+
+
+
+
+
+
+
+
+
+
+        
     </script>
 </body>
 </html>
