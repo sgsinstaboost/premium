@@ -2327,7 +2327,585 @@
 
 
 
+// ==========================================
+        // 🔐 4-DIGIT UNIQUE UID GENERATOR & SYSTEM
+        // ==========================================
 
+        // 1. Unique 4-Digit UID Generator Function (Ensures no duplicate UID)
+        window.generateUniqueUserUID = async function() {
+            let isUnique = false;
+            let generatedUid = "";
+            let attempts = 0;
+            const usersRef = ref(database, 'users');
+
+            while (!isUnique && attempts < 50) {
+                attempts++;
+                // 1000 se 9999 ke beech 4-digit random number
+                generatedUid = Math.floor(1000 + Math.random() * 9000).toString();
+                
+                try {
+                    const snapshot = await get(child(usersRef, `?orderBy="userUid"&equalTo="${generatedUid}"`));
+                    if (!snapshot.exists()) {
+                        isUnique = true;
+                    }
+                } catch (e) {
+                    // Fallback check from cache or direct snap
+                    isUnique = true; 
+                }
+            }
+            return generatedUid || Math.floor(1000 + Math.random() * 9000).toString();
+        };
+
+        // 2. Global UID Copy Function (User & Admin both)
+        window.copyUserUIDToClipboard = function(elementId, btnElement) {
+            const uidElement = document.getElementById(elementId);
+            if (!uidElement) return;
+            
+            const rawText = uidElement.innerText.replace('#', '').trim();
+            
+            navigator.clipboard.writeText(rawText).then(() => {
+                if (window.showCustomToast) {
+                    window.showCustomToast(`UID #${rawText} Copied to Clipboard!`, "success");
+                }
+                if (btnElement) {
+                    const originalHTML = btnElement.innerHTML;
+                    btnElement.innerHTML = `<i class="fa-solid fa-check text-emerald-400"></i> <span class="text-emerald-400">Copied!</span>`;
+                    setTimeout(() => {
+                        btnElement.innerHTML = originalHTML;
+                    }, 2000);
+                }
+            }).catch(() => {
+                if (window.showCustomToast) window.showCustomToast("Failed to copy UID", "error");
+            });
+        };
+
+        // 3. Inject User Drawer UID Display Box Dynamic UI
+        window.injectDrawerUIDCard = function(userUid) {
+            const drawerContainer = document.getElementById('drawerUserIdentity')?.parentElement;
+            if (drawerContainer && !document.getElementById('drawerUidCardBox')) {
+                const uidBox = document.createElement('div');
+                uidBox.id = 'drawerUidCardBox';
+                uidBox.className = 'mt-2.5 p-2.5 bg-[#030712]/90 border border-slate-800 rounded-xl flex items-center justify-between shadow-inner';
+                uidBox.innerHTML = `
+                    <div class="flex flex-col">
+                        <span class="text-[8px] uppercase font-mono tracking-widest text-slate-500 font-bold">User UID</span>
+                        <span id="drawerUserUIDVal" class="text-xs font-mono font-extrabold text-rose-400">#${userUid}</span>
+                    </div>
+                    <button type="button" onclick="window.copyUserUIDToClipboard('drawerUserUIDVal', this)" class="bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 px-2.5 py-1 rounded-lg text-[10px] font-mono font-bold transition flex items-center space-x-1 active:scale-95">
+                        <i class="fa-regular fa-copy"></i>
+                        <span>Copy</span>
+                    </button>
+                `;
+                drawerContainer.appendChild(uidBox);
+            } else if (document.getElementById('drawerUserUIDVal')) {
+                document.getElementById('drawerUserUIDVal').innerText = `#${userUid}`;
+            }
+        };
+
+        // 4. Override / Hook Firebase User Auth Listener to Ensure Unique UID Allocation
+        const originalOnAuthStateChanged = onAuthStateChanged;
+        
+        // Dynamic hook into main auth stream to update UI
+        const checkAndInjectUID = async (user) => {
+            if (!user) return;
+            const userDbRef = ref(database, 'users/' + user.uid);
+            
+            try {
+                const snapshot = await get(userDbRef);
+                let currentUidVal = null;
+                
+                if (snapshot.exists()) {
+                    const data = snapshot.val();
+                    if (data.userUid) {
+                        currentUidVal = data.userUid;
+                    } else {
+                        currentUidVal = await window.generateUniqueUserUID();
+                        await update(userDbRef, { userUid: currentUidVal });
+                    }
+                } else {
+                    currentUidVal = await window.generateUniqueUserUID();
+                }
+
+                // Inject UID Box inside Drawer UI
+                if (currentUidVal) {
+                    window.injectDrawerUIDCard(currentUidVal);
+                }
+            } catch(e) {
+                console.warn("UID Processing Notice:", e);
+            }
+        };
+
+        // Monitor Auth Changes
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                checkAndInjectUID(user);
+            }
+        });
+
+        // 5. Update Admin User Table to Show User UID Header & Values
+        const originalRenderAdminUsers = window.renderAdminUsersList;
+        window.renderAdminUsersList = function() {
+            const stream = document.getElementById('adminUsersStream');
+            if (!stream) return;
+
+            // Admin Table Header Direct Update (Inserts UID Header if missing)
+            const tableHeadTr = stream.closest('table')?.querySelector('thead tr');
+            if (tableHeadTr && !tableHeadTr.querySelector('.uid-head-col')) {
+                const th = document.createElement('th');
+                th.className = 'p-3 sm:p-4 uid-head-col';
+                th.innerText = 'USER UID';
+                const createdCol = tableHeadTr.children[2];
+                if (createdCol) tableHeadTr.insertBefore(th, createdCol);
+            }
+
+            if (!window.allUsersCache || typeof window.allUsersCache !== 'object' || Object.keys(window.allUsersCache).length === 0) {
+                stream.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500 italic font-mono">No users registered in database.</td></tr>`;
+                return;
+            }
+
+            const searchEl = document.getElementById('adminUserSearchInput');
+            const searchTerm = searchEl ? searchEl.value.trim().toLowerCase() : '';
+            let htmlRows = '';
+            let count = 0;
+
+            Object.keys(window.allUsersCache).forEach(uid => {
+                const u = window.allUsersCache[uid];
+                if (!u || typeof u !== 'object') return;
+
+                const email = u.email || `User (${uid.substring(0, 8)})`;
+                const userUidVal = u.userUid || '----';
+
+                if (searchTerm && !email.toLowerCase().includes(searchTerm) && !userUidVal.includes(searchTerm)) {
+                    return;
+                }
+                count++;
+
+                const liveBal = u.walletBalance !== undefined ? parseFloat(u.walletBalance).toFixed(2) : "0.00";
+                const safeEmail = window.escapeHtml(email);
+                const providerIcon = (u.provider === 'google' || u.provider === 'google.com') 
+                    ? `<i class="fa-brands fa-google text-rose-500 text-sm" title="Google Provider"></i>` 
+                    : `<i class="fa-solid fa-envelope text-sky-400 text-sm" title="Email Provider"></i>`;
+                const createdAtStr = window.escapeHtml(u.createdAt || '24 Jul 2026');
+                const lastSignedInStr = window.escapeHtml(u.lastSignedIn || '24 Jul 2026');
+                
+                htmlRows += `
+                    <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800 font-mono text-xs">
+                        <td class="p-3 sm:p-4 text-slate-200 font-bold truncate max-w-[180px]" title="${safeEmail}">${safeEmail}</td>
+                        <td class="p-3 sm:p-4 text-center">${providerIcon}</td>
+                        <td class="p-3 sm:p-4">
+                            <div class="flex items-center space-x-1.5">
+                                <span id="adminUid_${uid}" class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-md font-extrabold text-[11px]">#${userUidVal}</span>
+                                <button onclick="window.copyUserUIDToClipboard('adminUid_${uid}', this)" class="text-slate-500 hover:text-purple-400 transition p-1" title="Copy UID">
+                                    <i class="fa-regular fa-copy text-xs"></i>
+                                </button>
+                            </div>
+                        </td>
+                        <td class="p-3 sm:p-4 text-slate-400">${createdAtStr}</td>
+                        <td class="p-3 sm:p-4 text-slate-400">${lastSignedInStr}</td>
+                        <td class="p-3 sm:p-4 font-bold text-emerald-400 font-mono">₹${liveBal}</td>
+                        <td class="p-3 sm:p-4 text-right space-x-2">
+                            <button onclick="window.updateUserBalancePrompt('${uid}', '${liveBal}', '${safeEmail}')" class="bg-purple-600/80 hover:bg-purple-500 border border-purple-500/40 text-white font-bold px-3 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95">Adjust Balance</button>
+                            <button onclick="window.triggerDeleteUserModal('${uid}', '${safeEmail}')" class="bg-rose-600/80 hover:bg-rose-500 border border-rose-500/40 text-white font-bold px-3 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95"><i class="fa-solid fa-trash-can mr-1"></i>Remove</button>
+                        </td>
+                    </tr>`;
+            });
+
+            if (count === 0) {
+                stream.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 italic font-mono">No matching user records found.</td></tr>`;
+            } else {
+                stream.innerHTML = htmlRows;
+            }
+        };
+
+
+
+
+
+// =======================================================
+        // 🎁 रेफरल चैलेंज (5 दोस्तों को शेयर करें और ₹5 कमाएं) सिस्टम
+        // =======================================================
+
+        // 1. "tab-refer" सेक्शन में UI एलिमेंट्स अपने आप जोड़ें
+        window.injectReferralChallengeUI = function() {
+            const referTabContainer = document.getElementById('tab-refer')?.querySelector('.glass-panel');
+            if (referTabContainer && !document.getElementById('referChallengeCard')) {
+                const challengeBox = document.createElement('div');
+                challengeBox.id = 'referChallengeCard';
+                challengeBox.className = 'bg-[#030712] p-5 rounded-2xl border border-amber-500/30 text-left space-y-4 shadow-glow-amber mt-4';
+                challengeBox.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2.5">
+                            <div class="w-9 h-9 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400 font-bold text-base">
+                                <i class="fa-solid fa-[#000] fa-trophy text-amber-400"></i>
+                            </div>
+                            <div>
+                                <h4 class="text-xs font-black uppercase text-white tracking-wider">5 दोस्तों को शेयर करें और ₹5.00 कमाएं</h4>
+                                <p class="text-[9px] text-slate-400 font-mono">विशेष माइलस्टोन इनाम</p>
+                            </div>
+                        </div>
+                        <button type="button" onclick="window.showReferChallengeTerms()" class="text-[10px] text-amber-400 font-mono underline hover:text-amber-300 transition">
+                            <i class="fa-solid fa-circle-info mr-1"></i>नियम व शर्तें
+                        </button>
+                    </div>
+
+                    <!-- प्रोग्रेस बार सेक्शन -->
+                    <div class="space-y-1.5">
+                        <div class="flex justify-between items-center text-[10px] font-mono font-bold">
+                            <span class="text-slate-400">सफल रेफरल (कम से कम ₹10 डिपॉज़िट)</span>
+                            <span id="referProgressText" class="text-amber-400">0 / 5</span>
+                        </div>
+                        <div class="w-full h-3 bg-slate-900 rounded-full border border-slate-800 overflow-hidden relative">
+                            <div id="referProgressBar" class="h-full bg-gradient-to-r from-amber-500 to-rose-500 rounded-full transition-all duration-500 w-0"></div>
+                        </div>
+                    </div>
+
+                    <!-- क्लेम / स्टेटस बटन बॉक्स -->
+                    <div id="referClaimActionBox" class="pt-1">
+                        <button id="btnCollectReferBonus" disabled type="button" onclick="window.claimReferralChallengeBonus()" class="w-full py-3 bg-slate-800 border border-slate-700 text-slate-500 font-extrabold uppercase text-xs tracking-widest rounded-xl transition flex items-center justify-center space-x-2 cursor-not-allowed">
+                            <i class="fa-solid fa-lock text-xs"></i>
+                            <span>₹5 अनलॉक करने के लिए 5/5 रेफरल पूरा करें</span>
+                        </button>
+                    </div>
+                `;
+                referTabContainer.appendChild(challengeBox);
+            }
+        };
+
+        // 2. नियम एवं शर्तें मॉडल / पॉपअप
+        window.showReferChallengeTerms = function() {
+            if (window.showSecurityInfo) {
+                const titleEl = document.getElementById('legalModalTitle');
+                const contentEl = document.getElementById('legalModalContent');
+                const modal = document.getElementById('legalModalOverlay');
+                
+                titleEl.innerHTML = `<i class="fa-solid fa-gift text-amber-400"></i><span>ऑफर की शर्तें: 5 दोस्तों को शेयर करें और ₹5 कमाएं</span>`;
+                contentEl.innerHTML = `
+                    <div class="space-y-3 font-sans text-xs">
+                        <div class="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-200 font-medium">
+                            अपने वॉलेट में सीधे ₹5 का बोनस पाने के लिए इन शर्तों का पालन करें:
+                        </div>
+                        <ul class="list-decimal pl-5 space-y-2 text-slate-300 font-sans text-[11px]">
+                            <li><strong>अकाउंट रजिस्ट्रेशन:</strong> आपके सभी 5 दोस्तों को आपके रेफरल कोड या लिंक का उपयोग करके नया अकाउंट बनाना होगा।</li>
+                            <li><strong>न्यूनतम डिपॉज़िट:</strong> प्रत्येक दोस्त को अपने वॉलेट में कम से कम <strong>₹10.00 या उससे अधिक</strong> जोड़ना होगा और एडमिन द्वारा वेरिफाई होना होगा।</li>
+                            <li><strong>लाइव प्रोग्रेस:</strong> जैसे ही आपका रेफर किया गया दोस्त ₹10+ का डिपॉज़िट पूरा करेगा, आपकी प्रोग्रेस बार अपडेट हो जाएगी (जैसे 1/5, 2/5)।</li>
+                            <li><strong>इनाम क्लेम करें:</strong> जैसे ही 5 दोस्त डिपॉज़िट पूरा करेंगे, "Collect ₹5" बटन तुरंत चालू हो जाएगा!</li>
+                        </ul>
+                    </div>
+                `;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            } else {
+                alert("शर्तें: ₹5 का इनाम पाने के लिए 5 दोस्तों को आपके कोड से रजिस्टर करना होगा और कम से कम ₹10 का डिपॉज़िट करना होगा!");
+            }
+        };
+
+        // 3. प्रोग्रेस बार और क्लेम बटन स्टेटस अपडेट करें
+        window.renderReferralChallengeProgress = function() {
+            window.injectReferralChallengeUI();
+
+            if (!userDataRecordCached) return;
+
+            const qualifiedCount = userDataRecordCached.qualifiedReferCount || 0;
+            const isClaimed = userDataRecordCached.referBonusClaimed || false;
+
+            const progressText = document.getElementById('referProgressText');
+            const progressBar = document.getElementById('referProgressBar');
+            const claimBox = document.getElementById('referClaimActionBox');
+
+            if (!progressText || !progressBar || !claimBox) return;
+
+            const targetVal = Math.min(qualifiedCount, 5);
+            const percentage = (targetVal / 5) * 100;
+
+            progressText.innerText = `${targetVal} / 5`;
+            progressBar.style.width = `${percentage}%`;
+
+            if (isClaimed) {
+                claimBox.innerHTML = `
+                    <div class="w-full py-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold uppercase text-xs tracking-widest rounded-xl text-center flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-circle-check text-emerald-400"></i>
+                        <span>₹5 का इनाम सफलतापूर्वक प्राप्त कर लिया गया है!</span>
+                    </div>
+                `;
+            } else if (qualifiedCount >= 5) {
+                claimBox.innerHTML = `
+                    <button type="button" onclick="window.claimReferralChallengeBonus()" class="w-full py-3 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-black uppercase text-xs tracking-widest rounded-xl shadow-glow-amber transition active:scale-95 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-hand-holding-dollar text-base animate-bounce"></i>
+                        <span>अभी ₹5.00 का इनाम क्लेम करें</span>
+                    </button>
+                `;
+            } else {
+                claimBox.innerHTML = `
+                    <button disabled type="button" class="w-full py-3 bg-slate-900 border border-slate-800 text-slate-500 font-extrabold uppercase text-xs tracking-widest rounded-xl flex items-center justify-center space-x-2 cursor-not-allowed">
+                        <i class="fa-solid fa-lock text-xs"></i>
+                        <span>₹5 पाने के लिए 5 रेफरल पूरा करें (${targetVal}/5)</span>
+                    </button>
+                `;
+            }
+        };
+
+        // 4. क्लेम बोनस फ़ंक्शन (Firebase में वॉलेट बैलेंस में ₹5 जोड़ता है)
+        window.claimReferralChallengeBonus = async function() {
+            if (!currentAuthenticatedUserToken || !userDataRecordCached) return;
+
+            const qualifiedCount = userDataRecordCached.qualifiedReferCount || 0;
+            const isClaimed = userDataRecordCached.referBonusClaimed || false;
+
+            if (isClaimed) {
+                if (window.showCustomToast) window.showCustomToast("इनाम पहले ही प्राप्त किया जा चुका है!", "info");
+                return;
+            }
+
+            if (qualifiedCount < 5) {
+                if (window.showCustomToast) window.showCustomToast("₹5 प्राप्त करने के लिए 5 योग्य दोस्तों की आवश्यकता है!", "error");
+                return;
+            }
+
+            const currentBal = parseFloat(userDataRecordCached.walletBalance || 0);
+            const newBal = currentBal + 5.00;
+            const rewardTxKey = 'tx_challenge_' + Date.now();
+
+            const txPayload = {
+                structId: rewardTxKey,
+                uid: currentAuthenticatedUserToken.uid,
+                value: 5.00,
+                utr: 'REFERRAL_5FRIENDS_REWARD',
+                internalState: 'Verified'
+            };
+
+            try {
+                // Firebase अपडेट करें
+                await update(ref(database, `users/${currentAuthenticatedUserToken.uid}`), {
+                    walletBalance: newBal,
+                    referBonusClaimed: true
+                });
+                await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${rewardTxKey}`), txPayload);
+
+                // लोकल डेटा कैश अपडेट करें
+                userDataRecordCached.walletBalance = newBal;
+                userDataRecordCached.referBonusClaimed = true;
+
+                // UI रीडआउट अपडेट करें
+                document.getElementById('userBalance').innerText = newBal.toFixed(2);
+                window.renderReferralChallengeProgress();
+
+                if (window.showCustomToast) {
+                    window.showCustomToast("🎉 बधाई हो! आपके वॉलेट में ₹5.00 जोड़ दिए गए हैं!", "success");
+                }
+            } catch (err) {
+                if (window.showCustomToast) window.showCustomToast("क्लेम त्रुटि: " + err.message, "error");
+            }
+        };
+
+        // 5. ≥ ₹10 डिपॉज़िट वाले रेफरल की गिनती के लिए एडमिन अप्रूवल लॉजिक
+        const originalCommitStateVerification = window.commitStateVerification;
+        window.commitStateVerification = function(targetUid, structId, txnValue, actionType) {
+            // मौजूदा अप्रूवल लॉजिक को कॉल करें
+            if (originalCommitStateVerification) {
+                originalCommitStateVerification(targetUid, structId, txnValue, actionType);
+            }
+
+            // अतिरिक्त जाँच: यदि स्वीकृत डिपॉज़िट >= ₹10 है, तो रेफरर की संख्या अपडेट करें
+            if (actionType === 'approve' && parseFloat(txnValue) >= 10.00) {
+                const targetUserRef = ref(database, `users/${targetUid}`);
+                get(targetUserRef).then((snap) => {
+                    if (snap.exists()) {
+                        const uData = snap.val();
+                        if (uData.referredBy && !uData.countedForReferChallenge) {
+                            const referrerUid = uData.referredBy;
+                            const referrerRef = ref(database, `users/${referrerUid}`);
+
+                            get(referrerRef).then((rSnap) => {
+                                if (rSnap.exists()) {
+                                    const rData = rSnap.val();
+                                    const currentCount = rData.qualifiedReferCount || 0;
+                                    
+                                    // रेफरर की संख्या बढ़ाएं
+                                    update(referrerRef, { qualifiedReferCount: currentCount + 1 });
+                                    // यूज़र को चिन्हित करें ताकि दोबारा न गिना जाए
+                                    update(targetUserRef, { countedForReferChallenge: true });
+                                }
+                            });
+                        }
+                    }
+                });
+            }
+        };
+
+        // 6. टैब स्विच / ऑथ लोड पर ऑटो रेंडर ट्रिगर करें
+        const originalSwitchTab = window.switchTab;
+        window.switchTab = function(targetId) {
+            if (originalSwitchTab) originalSwitchTab(targetId);
+            if (targetId === 'refer') {
+                setTimeout(() => window.renderReferralChallengeProgress(), 100);
+            }
+        };
+
+
+
+
+
+        // =======================================================
+        // 🔔 RE-ENTRY REFERRAL POPUP & DYNAMIC EMAIL DP SYNC
+        // =======================================================
+
+        // 1. Inject Login Referral Popup Modal HTML dynamically
+        window.injectLoginReferralPopupUI = function() {
+            if (document.getElementById('loginReferralModalOverlay')) return;
+
+            const modalDiv = document.createElement('div');
+            modalDiv.id = 'loginReferralModalOverlay';
+            modalDiv.className = 'fixed inset-0 bg-[#030712]/90 z-[110] hidden items-center justify-center p-4 backdrop-blur-md transition-all duration-300';
+            modalDiv.innerHTML = `
+                <div class="glass-panel max-w-sm w-full rounded-[28px] p-6 space-y-4 border-amber-500/40 shadow-glow-amber relative text-center overflow-hidden animate-fade-in">
+                    
+                    <!-- Close Button -->
+                    <button type="button" onclick="window.closeLoginReferralPopup()" class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
+                        <i class="fa-solid fa-xmark text-lg"></i>
+                    </button>
+
+                    <!-- Icon Banner -->
+                    <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl border border-amber-500/30 flex items-center justify-center mx-auto text-3xl shadow-glow-amber">
+                        <i class="fa-solid fa-gift animate-bounce"></i>
+                    </div>
+
+                    <!-- Main Banner Text -->
+                    <div class="space-y-1">
+                        <span class="text-[9px] uppercase font-mono tracking-widest text-amber-400 font-bold">Offer Alert</span>
+                        <h3 class="text-lg font-black uppercase text-white tracking-tight">5 Dosto ko Share Kare Aur Paye ₹5.00!</h3>
+                        <p class="text-xs text-slate-300 font-medium">Apne dosto ko app refer karein aur wallet bonus paayein.</p>
+                    </div>
+
+                    <!-- Click to View Terms Button -->
+                    <button type="button" onclick="window.showHindiReferTermsModal()" class="w-full py-3 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-black uppercase text-xs tracking-widest rounded-xl shadow-md transition active:scale-95 flex items-center justify-center space-x-2">
+                        <i class="fa-solid fa-circle-info"></i>
+                        <span>Niyam Aur Shartein (Terms) Dekhein</span>
+                    </button>
+
+                    <button type="button" onclick="window.closeLoginReferralPopup()" class="text-[11px] text-slate-400 hover:text-slate-200 font-mono underline block mx-auto pt-1">
+                        Abhi Nahi (Skip)
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(modalDiv);
+        };
+
+        // 2. Open / Close Login Popup Functions (App Switching Supported)
+        window.openLoginReferralPopup = function() {
+            window.injectLoginReferralPopupUI();
+            const modal = document.getElementById('loginReferralModalOverlay');
+            if (modal) {
+                // Show global loading indicator brief flash before showing popup
+                const loader = document.getElementById('globalLoadingScreen');
+                if (loader) {
+                    loader.classList.remove('hidden');
+                    loader.style.opacity = '1';
+                    setTimeout(() => {
+                        loader.style.opacity = '0';
+                        setTimeout(() => loader.classList.add('hidden'), 300);
+                        modal.classList.remove('hidden');
+                        modal.classList.add('flex');
+                    }, 400);
+                } else {
+                    modal.classList.remove('hidden');
+                    modal.classList.add('flex');
+                }
+            }
+        };
+
+        window.closeLoginReferralPopup = function() {
+            const modal = document.getElementById('loginReferralModalOverlay');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        };
+
+        // 3. Display Hindi Terms & Conditions Modal
+        window.showHindiReferTermsModal = function() {
+            window.closeLoginReferralPopup();
+
+            const titleEl = document.getElementById('legalModalTitle');
+            const contentEl = document.getElementById('legalModalContent');
+            const modal = document.getElementById('legalModalOverlay');
+
+            if (titleEl && contentEl && modal) {
+                titleEl.innerHTML = `<i class="fa-solid fa-gift text-amber-400"></i><span>रेफरल ऑफर की नियम एवं शर्तें (Terms & Conditions)</span>`;
+                contentEl.innerHTML = `
+                    <div class="space-y-4 font-sans text-xs text-slate-300 leading-relaxed">
+                        <div class="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-200 font-semibold">
+                            🎁 ₹5.00 का बोनस सीधे अपने वॉलेट में पाने के लिए नीचे दी गई शर्तों को पूरा करें:
+                        </div>
+
+                        <ol class="list-decimal pl-5 space-y-2.5 font-sans">
+                            <li><strong>खाता बनाएं (Sign Up):</strong> आपके 5 दोस्तों को आपके Referral Code या Referral Link का उपयोग करके नया अकाउंट बनाना होगा।</li>
+                            <li><strong>न्यूनतम डिपॉज़िट (Min Deposit):</strong> आपके पांचों दोस्तों को अपने वॉलेट में कम से कम <strong>₹10.00 या उससे अधिक</strong> ऐड (Deposit) करना होगा।</li>
+                            <li><strong>एडमिन वेरिफिकेशन (Admin Approval):</strong> जैसे ही आपके दोस्त का डिपॉज़िट एडमिन द्वारा अप्रूव हो जाएगा, आपकी रेफरल प्रोग्रेस (0/5 से 1/5) बढ़ जाएगी।</li>
+                            <li><strong>बोनस क्लेम करें (Claim ₹5):</strong> 5 दोस्तों के ₹10+ ऐड करते ही आपके 'Earn' सेक्शन में <strong>"Collect ₹5"</strong> का बटन आ जाएगा। बटन दबाते ही ₹5.00 तुरंत आपके वॉलेट में जुड़ जाएंगे।</li>
+                        </ol>
+
+                        <div class="bg-rose-500/10 p-2.5 rounded-xl border border-rose-500/20 text-[11px] text-rose-300">
+                            <strong>नोट:</strong> एक ही मोबाइल/डिवाइस से फर्जी अकाउंट बनाने पर बोनस नहीं मिलेगा।
+                        </div>
+                    </div>
+                `;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        };
+
+        // 4. Fixed Email Live Photo Sync (Gravatar + Fallback Avatar)
+        window.syncUserProfilePicture = function(user) {
+            const drawerLogoImg = document.getElementById('drawerUserLogo');
+            if (!drawerLogoImg || !user) return;
+
+            // If Google login provided photoURL
+            if (user.photoURL && user.photoURL.trim() !== '' && !user.photoURL.includes('dicebear')) {
+                drawerLogoImg.src = user.photoURL;
+            } else {
+                // Generates dynamic profile picture for Email logins
+                const cleanEmail = (user.email || user.uid || 'sgsuser').trim().toLowerCase();
+                
+                // Primary: Dicebear Initial/Bot Identicon
+                const avatarUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanEmail)}&backgroundColor=0d1220`;
+                drawerLogoImg.src = avatarUrl;
+                
+                // Fallback image handler in case network blocks SVG
+                drawerLogoImg.onerror = function() {
+                    this.onerror = null;
+                    this.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.uid)}`;
+                };
+            }
+        };
+
+        // 5. App State & App Resume Listener (Shows Pop-up every time user re-enters app)
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible' && auth.currentUser) {
+                setTimeout(() => {
+                    window.openLoginReferralPopup();
+                }, 500);
+            }
+        });
+
+        // 6. Auth State Listener Hook
+        auth.onAuthStateChanged((user) => {
+            if (user) {
+                // Sync User Live Photo / Avatar in Drawer
+                window.syncUserProfilePicture(user);
+
+                // Show Popup on initial login
+                setTimeout(() => {
+                    window.openLoginReferralPopup();
+                }, 800);
+            }
+        });
+
+
+
+
+
+
+        
 
 
 
