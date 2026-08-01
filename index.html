@@ -2947,17 +2947,16 @@ window.closeNoticeBoard = function() {
 };
 
 
-// 2. Listen & Auto-Popup Notice for Users on Login
+// 2. Listen & Auto-Popup Notice for Users on Login (Realtime Fix)
 const listenAndShowNotice = () => {
     const noticeRef = ref(database, 'system_notice/content');
     onValue(noticeRef, (snapshot) => {
         const noticeText = snapshot.exists() ? snapshot.val() : "";
         window.activeSystemNoticeText = noticeText;
         
-        // Jab admin notice dalega, tabhi user ko popup dikhega
-        if (noticeText && noticeText.trim() !== "" && !sessionStorage.getItem('notice_shown_session')) {
+        // Jab admin notice dalega, turant user ko popup dikhega
+        if (noticeText && noticeText.trim() !== "") {
             window.openNoticeBoard(noticeText);
-            sessionStorage.setItem('notice_shown_session', 'true');
         }
     });
 };
@@ -2991,7 +2990,7 @@ window.injectAdminNoticeEditorUI = function() {
             <div class="glass-panel p-5 rounded-2xl border-purple-500/20 space-y-4 shadow-glow-purple">
                 <div>
                     <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">Notice Board Content (HTML / Text)</label>
-                    <textarea id="adminNoticeInput" rows="6" placeholder="Yahan apna notice ya HTML code likhein (Jaise: &lt;b&gt;New Offer!&lt;/b&gt;)" class="w-full bg-[#0d1220] p-4 rounded-xl border border-slate-800 focus:outline-none focus:border-purple-500 text-slate-200 text-xs font-mono transition"></textarea>
+                    <textarea id="adminNoticeInput" rows="6" placeholder="Yahan apna notice ya HTML code likhein" class="w-full bg-[#0d1220] p-4 rounded-xl border border-slate-800 focus:outline-none focus:border-purple-500 text-slate-200 text-xs font-mono transition"></textarea>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
                     <button type="button" onclick="window.saveSystemNotice()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-wider rounded-xl transition shadow-glow-purple active:scale-95">
@@ -3084,7 +3083,6 @@ auth.onAuthStateChanged((user) => {
         window.injectAdminNoticeEditorUI();
     }
 });
-
         
 
 
