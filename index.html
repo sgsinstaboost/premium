@@ -2878,28 +2878,7 @@
             }
         };
 
-        // 5. App State & App Resume Listener (Shows Pop-up every time user re-enters app)
-        document.addEventListener('visibilitychange', () => {
-            if (document.visibilityState === 'visible' && auth.currentUser) {
-                setTimeout(() => {
-                    window.openLoginReferralPopup();
-                }, 500);
-            }
-        });
-
-        // 6. Auth State Listener Hook
-        auth.onAuthStateChanged((user) => {
-            if (user) {
-                // Sync User Live Photo / Avatar in Drawer
-                window.syncUserProfilePicture(user);
-
-                // Show Popup on initial login
-                setTimeout(() => {
-                    window.openLoginReferralPopup();
-                }, 800);
-            }
-        });
-
+      
 
 
 
