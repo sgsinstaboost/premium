@@ -2954,7 +2954,7 @@ const listenAndShowNotice = () => {
         const noticeText = snapshot.exists() ? snapshot.val() : "";
         window.activeSystemNoticeText = noticeText;
         
-        // Agar notice available hai aur user ne is session me close nahi kiya
+        // Jab admin notice dalega, tabhi user ko popup dikhega
         if (noticeText && noticeText.trim() !== "" && !sessionStorage.getItem('notice_shown_session')) {
             window.openNoticeBoard(noticeText);
             sessionStorage.setItem('notice_shown_session', 'true');
@@ -2968,9 +2968,8 @@ window.injectAdminNoticeEditorUI = function() {
     const adminConsole = document.getElementById('adminCoreConsole');
     if (!adminConsole || document.getElementById('adminNoticeEditorCard')) return;
 
-    // Admin Tabs Navigation ke just baad ek section add karein
     const tabsNav = adminConsole.querySelector('.max-w-7xl > .flex');
-    if (tabsNav) {
+    if (tabsNav && !document.getElementById('admin-tab-notice-btn')) {
         const noticeBtn = document.createElement('button');
         noticeBtn.id = 'admin-tab-notice-btn';
         noticeBtn.className = 'bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition';
@@ -2979,9 +2978,8 @@ window.injectAdminNoticeEditorUI = function() {
         tabsNav.appendChild(noticeBtn);
     }
 
-    // Admin Panel ke andar Notice Editor Section banayein
     const parentContainer = adminConsole.querySelector('.max-w-7xl');
-    if (parentContainer) {
+    if (parentContainer && !document.getElementById('adminNoticeSection')) {
         const noticeSec = document.createElement('div');
         noticeSec.id = 'adminNoticeSection';
         noticeSec.className = 'space-y-4 hidden';
@@ -3012,7 +3010,7 @@ window.injectAdminNoticeEditorUI = function() {
     }
 };
 
-// Admin Tab Switcher override taaki Notice tab bhi properly toggle ho
+// Admin Tab Switcher override
 const originalSwitchAdminTab = window.switchAdminTab;
 window.switchAdminTab = function(tabName) {
     if (originalSwitchAdminTab) originalSwitchAdminTab(tabName);
@@ -3030,7 +3028,6 @@ window.switchAdminTab = function(tabName) {
         if (usrSec) usrSec.classList.add('hidden');
         if (noticeSec) {
             noticeSec.classList.remove('hidden');
-            // Current saved notice textarea me load karein
             get(ref(database, 'system_notice/content')).then((snap) => {
                 if (snap.exists() && document.getElementById('adminNoticeInput')) {
                     document.getElementById('adminNoticeInput').value = snap.val();
@@ -3073,7 +3070,6 @@ window.deleteSystemNotice = async function() {
     }
 };
 
-
 // 6. Auto-Initialize on Startup
 window.addEventListener('DOMContentLoaded', () => {
     window.injectNoticeBoardUI();
@@ -3082,7 +3078,6 @@ window.addEventListener('DOMContentLoaded', () => {
     }, 1000);
 });
 
-// Firebase Auth state change par notice listener activate karein
 auth.onAuthStateChanged((user) => {
     if (user) {
         listenAndShowNotice();
