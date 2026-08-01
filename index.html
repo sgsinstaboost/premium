@@ -2883,78 +2883,86 @@
 
 
 // =======================================================
-// 📢 REALTIME NOTICE BOARD SYSTEM (USER & ADMIN PANEL)
+// 📢 SLIDING PUSH HEADER NOTICE SYSTEM (USER & ADMIN)
 // =======================================================
 
-// 1. User Notice Board Modal UI Injector
+// 1. Push Header Notice UI Injector (Website content ko push karega)
 window.injectNoticeBoardUI = function() {
-    if (document.getElementById('systemNoticeModalOverlay')) return;
+    if (document.getElementById('systemNoticePushBanner')) return;
 
-    const modalDiv = document.createElement('div');
-    modalDiv.id = 'systemNoticeModalOverlay';
-    modalDiv.className = 'fixed inset-0 bg-[#030712]/90 z-[120] hidden items-center justify-center p-4 backdrop-blur-md transition-all duration-300';
-    modalDiv.innerHTML = `
-        <div class="glass-panel max-w-lg w-full rounded-[32px] p-6 sm:p-8 space-y-5 border-rose-500/40 shadow-glow-rose relative overflow-hidden animate-fade-in">
-            
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
-                <div class="flex items-center space-x-2.5">
-                    <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-base animate-pulse">
-                        <i class="fa-solid fa-bullhorn"></i>
-                    </div>
-                    <div>
-                        <h3 class="text-sm sm:text-base font-black uppercase text-white tracking-wider">System Notice Board</h3>
-                        <p class="text-[9px] text-slate-400 font-mono uppercase">Important Announcements & Updates</p>
-                    </div>
+    const bannerDiv = document.createElement('div');
+    bannerDiv.id = 'systemNoticePushBanner';
+    bannerDiv.className = 'w-full bg-[#090d16]/95 border-b border-rose-500/40 shadow-glow-rose backdrop-blur-xl transition-all duration-500 ease-in-out overflow-hidden max-h-0 opacity-0 z-[100] relative';
+    
+    bannerDiv.innerHTML = `
+        <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-rose-500 via-amber-500 to-rose-500 animate-pulse"></div>
+        <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
+            <div class="flex items-center space-x-3 overflow-hidden">
+                <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-sm shrink-0 animate-pulse">
+                    <i class="fa-solid fa-bullhorn"></i>
                 </div>
-                <button type="button" onclick="window.closeNoticeBoard()" class="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
+                <!-- Notice Text Body -->
+                <div id="systemNoticeBodyContent" class="text-xs sm:text-sm text-slate-200 font-sans leading-relaxed overflow-x-auto">
+                    <span class="text-slate-400 italic">Loading announcements...</span>
+                </div>
             </div>
 
-            <!-- Notice Content Box (Supports HTML & Normal Text) -->
-            <div id="systemNoticeBodyContent" class="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans max-h-[60vh] overflow-y-auto space-y-3 p-1">
-                <p class="text-slate-400 italic">Loading system notices...</p>
-            </div>
-
-            <div class="pt-3 border-t border-slate-800/80 flex justify-end">
-                <button type="button" onclick="window.closeNoticeBoard()" class="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-xs font-bold text-white uppercase tracking-widest rounded-xl shadow-glow-rose transition active:scale-95">
-                    Understand & Close
-                </button>
-            </div>
+            <!-- Close / Hide Button -->
+            <button type="button" onclick="window.closeNoticeBoard()" class="text-slate-400 hover:text-rose-500 p-2 hover:bg-slate-900 rounded-xl transition shrink-0 active:scale-95">
+                <i class="fa-solid fa-xmark text-base"></i>
+            </button>
         </div>
     `;
-    document.body.appendChild(modalDiv);
+
+    const appContainer = document.getElementById('appContainer') || document.body.firstElementChild;
+    if (appContainer) {
+        document.body.insertBefore(bannerDiv, appContainer);
+    } else {
+        document.body.prepend(bannerDiv);
+    }
 };
+
+let noticeTimer = null;
 
 window.openNoticeBoard = function(noticeHtml) {
     window.injectNoticeBoardUI();
     const bodyContent = document.getElementById('systemNoticeBodyContent');
-    const modal = document.getElementById('systemNoticeModalOverlay');
+    const banner = document.getElementById('systemNoticePushBanner');
 
-    if (bodyContent && modal) {
-        bodyContent.innerHTML = noticeHtml || "<p class='text-slate-400'>No active notices right now.</p>";
-        modal.classList.remove('hidden');
-        modal.classList.add('flex');
+    if (bodyContent && banner) {
+        bodyContent.innerHTML = noticeHtml || "";
+        
+        banner.style.maxHeight = '200px';
+        banner.classList.remove('opacity-0');
+        banner.classList.add('opacity-100');
+
+        if (noticeTimer) clearTimeout(noticeTimer);
+
+        // 10 second baad automatic upar collapse ho jayega
+        noticeTimer = setTimeout(() => {
+            window.closeNoticeBoard();
+        }, 10000);
     }
 };
 
 window.closeNoticeBoard = function() {
-    const modal = document.getElementById('systemNoticeModalOverlay');
-    if (modal) {
-        modal.classList.add('hidden');
-        modal.classList.remove('flex');
+    const banner = document.getElementById('systemNoticePushBanner');
+    if (banner) {
+        banner.style.maxHeight = '0px';
+        banner.classList.remove('opacity-100');
+        banner.classList.add('opacity-0');
     }
+    if (noticeTimer) clearTimeout(noticeTimer);
 };
 
 
-// 2. Listen & Auto-Popup Notice for Users on Login (Realtime Fix)
+// 2. Realtime Listener for Users
 const listenAndShowNotice = () => {
     const noticeRef = ref(database, 'system_notice/content');
     onValue(noticeRef, (snapshot) => {
         const noticeText = snapshot.exists() ? snapshot.val() : "";
         window.activeSystemNoticeText = noticeText;
         
-        // Jab admin notice dalega, turant user ko popup dikhega
         if (noticeText && noticeText.trim() !== "") {
             window.openNoticeBoard(noticeText);
         }
@@ -2962,7 +2970,7 @@ const listenAndShowNotice = () => {
 };
 
 
-// 3. Inject Admin Notice Control Panel inside Admin Center
+// 3. Admin Notice Editor Panel Integration
 window.injectAdminNoticeEditorUI = function() {
     const adminConsole = document.getElementById('adminCoreConsole');
     if (!adminConsole || document.getElementById('adminNoticeEditorCard')) return;
@@ -2984,12 +2992,12 @@ window.injectAdminNoticeEditorUI = function() {
         noticeSec.className = 'space-y-4 hidden';
         noticeSec.innerHTML = `
             <div class="flex justify-between items-center">
-                <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">Manage Broadcast Notice Board</h3>
-                <span class="text-[10px] text-slate-400 font-mono">Supports Normal Text & HTML tags</span>
+                <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">Manage Sliding Header Notice</h3>
+                <span class="text-[10px] text-slate-400 font-mono">Supports Clean HTML & Text</span>
             </div>
             <div class="glass-panel p-5 rounded-2xl border-purple-500/20 space-y-4 shadow-glow-purple">
                 <div>
-                    <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">Notice Board Content (HTML / Text)</label>
+                    <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">Notice Content (HTML / Text)</label>
                     <textarea id="adminNoticeInput" rows="6" placeholder="Yahan apna notice ya HTML code likhein" class="w-full bg-[#0d1220] p-4 rounded-xl border border-slate-800 focus:outline-none focus:border-purple-500 text-slate-200 text-xs font-mono transition"></textarea>
                 </div>
                 <div class="flex flex-wrap items-center gap-3">
@@ -3000,7 +3008,7 @@ window.injectAdminNoticeEditorUI = function() {
                         <i class="fa-solid fa-trash-can mr-1.5"></i> Delete / Clear Notice
                     </button>
                     <button type="button" onclick="window.openNoticeBoard(document.getElementById('adminNoticeInput').value)" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold uppercase text-xs tracking-wider rounded-xl transition">
-                        <i class="fa-solid fa-eye mr-1.5"></i> Preview Notice
+                        <i class="fa-solid fa-eye mr-1.5"></i> Preview Header
                     </button>
                 </div>
             </div>
@@ -3042,7 +3050,7 @@ window.switchAdminTab = function(tabName) {
     }
 };
 
-// 4. Save Notice to Firebase Database
+// 4. Save Notice to Firebase
 window.saveSystemNotice = async function() {
     const inputEl = document.getElementById('adminNoticeInput');
     if (!inputEl) return;
@@ -3056,12 +3064,13 @@ window.saveSystemNotice = async function() {
     }
 };
 
-// 5. Delete / Clear Notice from Firebase Database
+// 5. Delete Notice from Firebase
 window.deleteSystemNotice = async function() {
     if (confirm("Kya aap sach me Notice Board clear/delete karna chahte hain?")) {
         try {
             await set(ref(database, 'system_notice/content'), "");
             if (document.getElementById('adminNoticeInput')) document.getElementById('adminNoticeInput').value = "";
+            window.closeNoticeBoard();
             if (window.showCustomToast) window.showCustomToast("Notice Board cleared successfully!", "success");
         } catch (err) {
             if (window.showCustomToast) window.showCustomToast("Failed to delete notice: " + err.message, "error");
@@ -3069,7 +3078,7 @@ window.deleteSystemNotice = async function() {
     }
 };
 
-// 6. Auto-Initialize on Startup
+// 6. Startup & Auth Init
 window.addEventListener('DOMContentLoaded', () => {
     window.injectNoticeBoardUI();
     setTimeout(() => {
@@ -3083,6 +3092,7 @@ auth.onAuthStateChanged((user) => {
         window.injectAdminNoticeEditorUI();
     }
 });
+        
         
 
 
