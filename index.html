@@ -2882,7 +2882,213 @@
 
 
 
+// =======================================================
+// 📢 REALTIME NOTICE BOARD SYSTEM (USER & ADMIN PANEL)
+// =======================================================
 
+// 1. User Notice Board Modal UI Injector
+window.injectNoticeBoardUI = function() {
+    if (document.getElementById('systemNoticeModalOverlay')) return;
+
+    const modalDiv = document.createElement('div');
+    modalDiv.id = 'systemNoticeModalOverlay';
+    modalDiv.className = 'fixed inset-0 bg-[#030712]/90 z-[120] hidden items-center justify-center p-4 backdrop-blur-md transition-all duration-300';
+    modalDiv.innerHTML = `
+        <div class="glass-panel max-w-lg w-full rounded-[32px] p-6 sm:p-8 space-y-5 border-rose-500/40 shadow-glow-rose relative overflow-hidden animate-fade-in">
+            
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3">
+                <div class="flex items-center space-x-2.5">
+                    <div class="w-9 h-9 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-base animate-pulse">
+                        <i class="fa-solid fa-bullhorn"></i>
+                    </div>
+                    <div>
+                        <h3 class="text-sm sm:text-base font-black uppercase text-white tracking-wider">System Notice Board</h3>
+                        <p class="text-[9px] text-slate-400 font-mono uppercase">Important Announcements & Updates</p>
+                    </div>
+                </div>
+                <button type="button" onclick="window.closeNoticeBoard()" class="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- Notice Content Box (Supports HTML & Normal Text) -->
+            <div id="systemNoticeBodyContent" class="text-xs sm:text-sm text-slate-200 leading-relaxed font-sans max-h-[60vh] overflow-y-auto space-y-3 p-1">
+                <p class="text-slate-400 italic">Loading system notices...</p>
+            </div>
+
+            <div class="pt-3 border-t border-slate-800/80 flex justify-end">
+                <button type="button" onclick="window.closeNoticeBoard()" class="px-6 py-2.5 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-xs font-bold text-white uppercase tracking-widest rounded-xl shadow-glow-rose transition active:scale-95">
+                    Understand & Close
+                </button>
+            </div>
+        </div>
+    `;
+    document.body.appendChild(modalDiv);
+};
+
+window.openNoticeBoard = function(noticeHtml) {
+    window.injectNoticeBoardUI();
+    const bodyContent = document.getElementById('systemNoticeBodyContent');
+    const modal = document.getElementById('systemNoticeModalOverlay');
+
+    if (bodyContent && modal) {
+        bodyContent.innerHTML = noticeHtml || "<p class='text-slate-400'>No active notices right now.</p>";
+        modal.classList.remove('hidden');
+        modal.classList.add('flex');
+    }
+};
+
+window.closeNoticeBoard = function() {
+    const modal = document.getElementById('systemNoticeModalOverlay');
+    if (modal) {
+        modal.classList.add('hidden');
+        modal.classList.remove('flex');
+    }
+};
+
+
+// 2. Listen & Auto-Popup Notice for Users on Login
+const listenAndShowNotice = () => {
+    const noticeRef = ref(database, 'system_notice/content');
+    onValue(noticeRef, (snapshot) => {
+        const noticeText = snapshot.exists() ? snapshot.val() : "";
+        window.activeSystemNoticeText = noticeText;
+        
+        // Agar notice available hai aur user ne is session me close nahi kiya
+        if (noticeText && noticeText.trim() !== "" && !sessionStorage.getItem('notice_shown_session')) {
+            window.openNoticeBoard(noticeText);
+            sessionStorage.setItem('notice_shown_session', 'true');
+        }
+    });
+};
+
+
+// 3. Inject Admin Notice Control Panel inside Admin Center
+window.injectAdminNoticeEditorUI = function() {
+    const adminConsole = document.getElementById('adminCoreConsole');
+    if (!adminConsole || document.getElementById('adminNoticeEditorCard')) return;
+
+    // Admin Tabs Navigation ke just baad ek section add karein
+    const tabsNav = adminConsole.querySelector('.max-w-7xl > .flex');
+    if (tabsNav) {
+        const noticeBtn = document.createElement('button');
+        noticeBtn.id = 'admin-tab-notice-btn';
+        noticeBtn.className = 'bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition';
+        noticeBtn.innerHTML = '<i class="fa-solid fa-bullhorn mr-1.5"></i> Notice Board Manager';
+        noticeBtn.onclick = () => window.switchAdminTab('notice');
+        tabsNav.appendChild(noticeBtn);
+    }
+
+    // Admin Panel ke andar Notice Editor Section banayein
+    const parentContainer = adminConsole.querySelector('.max-w-7xl');
+    if (parentContainer) {
+        const noticeSec = document.createElement('div');
+        noticeSec.id = 'adminNoticeSection';
+        noticeSec.className = 'space-y-4 hidden';
+        noticeSec.innerHTML = `
+            <div class="flex justify-between items-center">
+                <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">Manage Broadcast Notice Board</h3>
+                <span class="text-[10px] text-slate-400 font-mono">Supports Normal Text & HTML tags</span>
+            </div>
+            <div class="glass-panel p-5 rounded-2xl border-purple-500/20 space-y-4 shadow-glow-purple">
+                <div>
+                    <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">Notice Board Content (HTML / Text)</label>
+                    <textarea id="adminNoticeInput" rows="6" placeholder="Yahan apna notice ya HTML code likhein (Jaise: &lt;b&gt;New Offer!&lt;/b&gt;)" class="w-full bg-[#0d1220] p-4 rounded-xl border border-slate-800 focus:outline-none focus:border-purple-500 text-slate-200 text-xs font-mono transition"></textarea>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button type="button" onclick="window.saveSystemNotice()" class="px-5 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-wider rounded-xl transition shadow-glow-purple active:scale-95">
+                        <i class="fa-solid fa-floppy-disk mr-1.5"></i> Save & Broadcast Notice
+                    </button>
+                    <button type="button" onclick="window.deleteSystemNotice()" class="px-5 py-2.5 bg-rose-600/80 hover:bg-rose-500 text-white font-bold uppercase text-xs tracking-wider rounded-xl transition active:scale-95">
+                        <i class="fa-solid fa-trash-can mr-1.5"></i> Delete / Clear Notice
+                    </button>
+                    <button type="button" onclick="window.openNoticeBoard(document.getElementById('adminNoticeInput').value)" class="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold uppercase text-xs tracking-wider rounded-xl transition">
+                        <i class="fa-solid fa-eye mr-1.5"></i> Preview Notice
+                    </button>
+                </div>
+            </div>
+        `;
+        parentContainer.appendChild(noticeSec);
+    }
+};
+
+// Admin Tab Switcher override taaki Notice tab bhi properly toggle ho
+const originalSwitchAdminTab = window.switchAdminTab;
+window.switchAdminTab = function(tabName) {
+    if (originalSwitchAdminTab) originalSwitchAdminTab(tabName);
+    
+    const depSec = document.getElementById('adminDepositsSection');
+    const usrSec = document.getElementById('adminUsersSection');
+    const noticeSec = document.getElementById('adminNoticeSection');
+    
+    const depBtn = document.getElementById('admin-tab-deposits-btn');
+    const usrBtn = document.getElementById('admin-tab-users-btn');
+    const noticeBtn = document.getElementById('admin-tab-notice-btn');
+
+    if (tabName === 'notice') {
+        if (depSec) depSec.classList.add('hidden');
+        if (usrSec) usrSec.classList.add('hidden');
+        if (noticeSec) {
+            noticeSec.classList.remove('hidden');
+            // Current saved notice textarea me load karein
+            get(ref(database, 'system_notice/content')).then((snap) => {
+                if (snap.exists() && document.getElementById('adminNoticeInput')) {
+                    document.getElementById('adminNoticeInput').value = snap.val();
+                }
+            });
+        }
+        if (noticeBtn) noticeBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
+        if (depBtn) depBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+        if (usrBtn) usrBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+    } else if (noticeBtn && tabName !== 'notice') {
+        if (noticeSec) noticeSec.classList.add('hidden');
+        noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+    }
+};
+
+// 4. Save Notice to Firebase Database
+window.saveSystemNotice = async function() {
+    const inputEl = document.getElementById('adminNoticeInput');
+    if (!inputEl) return;
+    const textVal = inputEl.value;
+
+    try {
+        await set(ref(database, 'system_notice/content'), textVal);
+        if (window.showCustomToast) window.showCustomToast("Notice Board successfully updated & broadcasted!", "success");
+    } catch (err) {
+        if (window.showCustomToast) window.showCustomToast("Failed to save notice: " + err.message, "error");
+    }
+};
+
+// 5. Delete / Clear Notice from Firebase Database
+window.deleteSystemNotice = async function() {
+    if (confirm("Kya aap sach me Notice Board clear/delete karna chahte hain?")) {
+        try {
+            await set(ref(database, 'system_notice/content'), "");
+            if (document.getElementById('adminNoticeInput')) document.getElementById('adminNoticeInput').value = "";
+            if (window.showCustomToast) window.showCustomToast("Notice Board cleared successfully!", "success");
+        } catch (err) {
+            if (window.showCustomToast) window.showCustomToast("Failed to delete notice: " + err.message, "error");
+        }
+    }
+};
+
+
+// 6. Auto-Initialize on Startup
+window.addEventListener('DOMContentLoaded', () => {
+    window.injectNoticeBoardUI();
+    setTimeout(() => {
+        window.injectAdminNoticeEditorUI();
+    }, 1000);
+});
+
+// Firebase Auth state change par notice listener activate karein
+auth.onAuthStateChanged((user) => {
+    if (user) {
+        listenAndShowNotice();
+        window.injectAdminNoticeEditorUI();
+    }
+});
 
         
 
