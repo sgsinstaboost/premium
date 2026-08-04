@@ -50,7 +50,7 @@
             min-height: 100vh;
         }
 
-        .overflow-y-auto, .overflow-auto, main, #authContainer, #adminCoreConsole, #aiMessagesStream, #legalModalOverlay {
+        .overflow-y-auto, .overflow-auto, main, #authContainer, #adminCoreConsole, #aiMessagesStream, #legalModalOverlay, #adminUserDetailModalOverlay {
             -webkit-overflow-scrolling: touch;
             overscroll-behavior: auto;
         }
@@ -703,7 +703,7 @@
                     <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">User Email & Live Balances</h3>
                     <div class="relative w-full sm:w-72">
                         <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="text" id="adminUserSearchInput" placeholder="Filter by Email address..." class="w-full bg-[#0d1220] pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
+                        <input type="text" id="adminUserSearchInput" placeholder="Filter by Email address or UID..." class="w-full bg-[#0d1220] pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
                     </div>
                 </div>
 
@@ -712,10 +712,10 @@
                         <table class="w-full text-left">
                             <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800">
                                 <tr>
-                                    <th class="p-3 sm:p-4">Identifier</th>
-                                    <th class="p-3 sm:p-4">Providers</th>
+                                    <th class="p-3 sm:p-4">User Identifier & UID</th>
+                                    <th class="p-3 sm:p-4 text-center">Provider</th>
                                     <th class="p-3 sm:p-4">Created</th>
-                                    <th class="p-3 sm:p-4">Signed In</th>
+                                    <th class="p-3 sm:p-4">Last Active</th>
                                     <th class="p-3 sm:p-4">Live Balance</th>
                                     <th class="p-3 sm:p-4 text-right">Actions</th>
                                 </tr>
@@ -728,6 +728,103 @@
                         </table>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Admin View User Data Modal -->
+    <div id="adminUserDetailModalOverlay" class="fixed inset-0 bg-[#030712]/95 z-[120] hidden items-center justify-center p-4 backdrop-blur-md">
+        <div class="glass-panel max-w-4xl w-full rounded-[32px] p-5 sm:p-7 space-y-5 relative max-h-[90vh] overflow-y-auto border-purple-500/30 shadow-2xl">
+            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 sticky top-0 bg-[#0d1220]/90 backdrop-blur-md z-10 pt-1">
+                <div>
+                    <h3 class="text-sm sm:text-base font-black uppercase text-purple-300 tracking-wider flex items-center space-x-2">
+                        <i class="fa-solid fa-user-gear text-purple-400"></i>
+                        <span>User Account Deep Audit</span>
+                    </h3>
+                    <p id="modalUserEmailTitle" class="text-xs font-mono text-slate-400 mt-0.5">Loading...</p>
+                </div>
+                <button type="button" onclick="window.closeAdminUserDetailModal()" class="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <!-- User Quick Metrics Cards -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                    <span class="text-[9px] uppercase text-slate-500 font-bold block">User UID</span>
+                    <span id="modalUserUID" class="text-amber-400 font-extrabold text-sm">#----</span>
+                </div>
+                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                    <span class="text-[9px] uppercase text-slate-500 font-bold block">Wallet Balance</span>
+                    <span id="modalUserWallet" class="text-emerald-400 font-extrabold text-sm">₹0.00</span>
+                </div>
+                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                    <span class="text-[9px] uppercase text-slate-500 font-bold block">Auth Provider</span>
+                    <span id="modalUserProvider" class="text-sky-400 font-bold">Email</span>
+                </div>
+                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                    <span class="text-[9px] uppercase text-slate-500 font-bold block">Qualified Refers</span>
+                    <span id="modalUserRefers" class="text-purple-400 font-bold">0</span>
+                </div>
+            </div>
+
+            <!-- User Orders Logs -->
+            <div class="space-y-3">
+                <h4 class="text-xs font-black uppercase text-slate-300 font-mono flex items-center space-x-2">
+                    <i class="fa-solid fa-box-archive text-sky-400"></i>
+                    <span>Submitted Orders History</span>
+                </h4>
+                <div class="glass-panel rounded-2xl overflow-hidden border-slate-800">
+                    <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800 sticky top-0">
+                                <tr>
+                                    <th class="p-2.5">Order ID</th>
+                                    <th class="p-2.5">Service</th>
+                                    <th class="p-2.5">Qty</th>
+                                    <th class="p-2.5">Cost</th>
+                                    <th class="p-2.5">Target Link</th>
+                                    <th class="p-2.5">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalUserOrdersStream" class="text-xs font-mono divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="6" class="p-6 text-center text-slate-500 italic">No orders logged for this user.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- User Transactions Logs -->
+            <div class="space-y-3 pt-2">
+                <h4 class="text-xs font-black uppercase text-slate-300 font-mono flex items-center space-x-2">
+                    <i class="fa-solid fa-receipt text-emerald-400"></i>
+                    <span>Wallet Deposit Requests</span>
+                </h4>
+                <div class="glass-panel rounded-2xl overflow-hidden border-slate-800">
+                    <div class="overflow-x-auto max-h-48 overflow-y-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800 sticky top-0">
+                                <tr>
+                                    <th class="p-2.5">Amount</th>
+                                    <th class="p-2.5">UTR Reference</th>
+                                    <th class="p-2.5">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="modalUserTxStream" class="text-xs font-mono divide-y divide-slate-800/60">
+                                <tr>
+                                    <td colspan="3" class="p-6 text-center text-slate-500 italic">No deposit records found.</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-2 border-t border-slate-800 flex justify-end">
+                <button type="button" onclick="window.closeAdminUserDetailModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 rounded-xl transition">Close Audit Window</button>
             </div>
         </div>
     </div>
@@ -1162,6 +1259,13 @@
                 }, (dbError) => {
                     window.hideGlobalLoadingScreen();
                 });
+
+                // Auto Trigger Status Synchronizer loop every 15 seconds
+                if (window.statusSyncInterval) clearInterval(window.statusSyncInterval);
+                window.syncOrdersStatusFromProvider();
+                window.statusSyncInterval = setInterval(() => {
+                    window.syncOrdersStatusFromProvider();
+                }, 15000);
                 
             } else {
                 currentAuthenticatedUserToken = null;
@@ -1351,6 +1455,7 @@
             
             const ordersList = userDataRecordCached.orders;
             const now = Date.now();
+            let stateHasChanged = false;
 
             for (let key in ordersList) {
                 const o = ordersList[key];
@@ -1368,6 +1473,7 @@
 
                     if (simulatedStatus !== o.status) {
                         o.status = simulatedStatus;
+                        stateHasChanged = true;
                         try {
                             await update(ref(database, `users/${currentAuthenticatedUserToken.uid}/orders/${key}`), { status: simulatedStatus });
                         } catch (e) {}
@@ -1375,6 +1481,9 @@
                 }
             }
             renderUserOrdersHistory();
+            if (stateHasChanged && window.allUsersCache && window.allUsersCache[currentAuthenticatedUserToken.uid]) {
+                window.allUsersCache[currentAuthenticatedUserToken.uid].orders = userDataRecordCached.orders;
+            }
         };
 
         // Render User Orders History (Exact Aapkaprovider Columns Style)
@@ -1450,6 +1559,7 @@
             });
         };
 
+        // ✅ UPDATED 100% SECURE VERCEL PROXY DISPATCHER
         window.executeSMMPipelineOrder = async function() {
             const selectElement = document.getElementById('serviceSelect');
             const rateCost = parseFloat(selectElement.value);
@@ -1472,31 +1582,27 @@
             submitBtn.disabled = true;
             submitBtn.innerHTML = `<span>DISPATCHING...</span><i class="fa-solid fa-spinner animate-spin"></i>`;
 
-            const secureMaskedTokenKey = "YTE3NjZhNWUxZGRjNTI1OWNmN2YxMGY4Y2E1ZGEyZDY=";
-            const baseApiUrl = "https://aapkaprovider.com/api/v2";
-            const proxyApiUrl = "https://corsproxy.io/?" + encodeURIComponent(baseApiUrl);
-            
             let providerLiveOrderId = null;
             let initialStartCount = "15556";
             
             try {
-                const orderPayloadBody = new FormData();
-                orderPayloadBody.append("key", atob(secureMaskedTokenKey));
-                orderPayloadBody.append("action", "add");
-                orderPayloadBody.append("service", extractedServiceId);
-                orderPayloadBody.append("link", link);
-                orderPayloadBody.append("quantity", qty);
+                // Call Vercel Serverless Function Proxy
+                const res = await fetch("/api/order", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        action: "add",
+                        service: extractedServiceId,
+                        link: link,
+                        quantity: qty
+                    })
+                });
 
-                let res;
-                try {
-                    res = await fetch(proxyApiUrl, { method: "POST", body: orderPayloadBody });
-                } catch(e) {
-                    res = await fetch(baseApiUrl, { method: "POST", body: orderPayloadBody });
-                }
                 const data = await res.json();
                 
                 if (data && data.error) {
-                    // SAFEGUARD: Agar provider error de (jaise active order exist karta ho), to wallet se ek paisa bhi nahi katega!
                     window.showCustomToast(`Order Refused: ${data.error}. Balance not deducted.`, "error");
                     submitBtn.disabled = false;
                     submitBtn.innerHTML = `<span>DISPATCH SMM PIPELINE</span><i class="fa-solid fa-paper-plane animate-pulse"></i>`;
@@ -1515,7 +1621,6 @@
                 providerLiveOrderId = Math.floor(100000 + Math.random() * 900000);
             }
 
-            // Execute Immediate Instant Order Logging and Balance Deduction ONLY ON SUCCESSFUL API RESPONSE
             const uniqueOrderKey = 'order_' + Date.now();
             const cleanServiceName = selectedServiceName.split('—')[0].trim();
             const orderPayloadData = { 
@@ -1533,11 +1638,9 @@
             const updatedUserBalancePostOrder = currentWalletBal - realTimeComputedCost;
 
             try {
-                // Deduct Balance & Record Order in Firebase Realtime Database
                 await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/orders/${uniqueOrderKey}`), orderPayloadData);
                 await update(ref(database, 'users/' + currentAuthenticatedUserToken.uid), { walletBalance: updatedUserBalancePostOrder });
 
-                // Update Local Cache and UI Readouts Instantly
                 if (userDataRecordCached) {
                     userDataRecordCached.walletBalance = updatedUserBalancePostOrder;
                     if (!userDataRecordCached.orders) userDataRecordCached.orders = {};
@@ -1547,12 +1650,10 @@
                 document.getElementById('userBalance').innerText = updatedUserBalancePostOrder.toFixed(2);
                 window.renderUserOrdersHistory();
 
-                // Show Success Banner
                 const banner = document.getElementById('topSuccessBanner');
                 document.getElementById('bannerNotificationText').innerText = `SUCCESS! Order ID: ${providerLiveOrderId} | Service ID: ${extractedServiceId} | Cost: ₹${realTimeComputedCost.toFixed(2)}`;
                 banner.classList.remove('hidden');
                 
-                // Clear Input Controls
                 document.getElementById('targetOrderQty').value = '';
                 document.getElementById('targetOrderLink').value = '';
                 document.getElementById('calculatedCostText').innerText = "0.00";
@@ -1568,6 +1669,7 @@
             }
         };
 
+        // 🌟 UPDATED ADMIN USERS LIST (SHOWS EMAIL WITH UID & CLICKABLE VIEW DATA)
         window.renderAdminUsersList = function() {
             const stream = document.getElementById('adminUsersStream');
             if(!stream) return;
@@ -1586,8 +1688,9 @@
                 if (!u || typeof u !== 'object') return;
 
                 const email = u.email || `User (${uid.substring(0, 8)})`;
+                const userUidVal = u.userUid || '----';
                 
-                if (searchTerm && !email.toLowerCase().includes(searchTerm)) {
+                if (searchTerm && !email.toLowerCase().includes(searchTerm) && !userUidVal.toLowerCase().includes(searchTerm)) {
                     return;
                 }
                 count++;
@@ -1602,14 +1705,23 @@
                 
                 htmlRows += `
                     <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800 font-mono text-xs">
-                        <td class="p-3 sm:p-4 text-slate-200 font-bold truncate max-w-[200px]" title="${safeEmail}">${safeEmail}</td>
+                        <td class="p-3 sm:p-4">
+                            <div class="flex flex-col">
+                                <span class="text-slate-200 font-bold truncate max-w-[200px]" title="${safeEmail}">${safeEmail}</span>
+                                <span onclick="window.viewAdminUserData('${uid}')" class="text-[10px] text-amber-400 font-extrabold cursor-pointer hover:underline flex items-center space-x-1 mt-0.5" title="Click to view full user activity & orders">
+                                    <i class="fa-solid fa-id-badge text-[9px]"></i>
+                                    <span>UID: #${userUidVal}</span>
+                                </span>
+                            </div>
+                        </td>
                         <td class="p-3 sm:p-4 text-center">${providerIcon}</td>
                         <td class="p-3 sm:p-4 text-slate-400">${createdAtStr}</td>
                         <td class="p-3 sm:p-4 text-slate-400">${lastSignedInStr}</td>
                         <td class="p-3 sm:p-4 font-bold text-emerald-400 font-mono">₹${liveBal}</td>
-                        <td class="p-3 sm:p-4 text-right space-x-2">
-                            <button onclick="window.updateUserBalancePrompt('${uid}', '${liveBal}', '${safeEmail}')" class="bg-purple-600/80 hover:bg-purple-500 border border-purple-500/40 text-white font-bold px-3 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95">Adjust Balance</button>
-                            <button onclick="window.triggerDeleteUserModal('${uid}', '${safeEmail}')" class="bg-rose-600/80 hover:bg-rose-500 border border-rose-500/40 text-white font-bold px-3 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95"><i class="fa-solid fa-trash-can mr-1"></i>Remove</button>
+                        <td class="p-3 sm:p-4 text-right space-x-1.5">
+                            <button onclick="window.viewAdminUserData('${uid}')" class="bg-amber-600/80 hover:bg-amber-500 border border-amber-500/40 text-slate-950 font-black px-2.5 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95"><i class="fa-solid fa-eye mr-1"></i>View Data</button>
+                            <button onclick="window.updateUserBalancePrompt('${uid}', '${liveBal}', '${safeEmail}')" class="bg-purple-600/80 hover:bg-purple-500 border border-purple-500/40 text-white font-bold px-2.5 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95">Adjust Bal</button>
+                            <button onclick="window.triggerDeleteUserModal('${uid}', '${safeEmail}')" class="bg-rose-600/80 hover:bg-rose-500 border border-rose-500/40 text-white font-bold px-2.5 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95"><i class="fa-solid fa-trash-can mr-1"></i>Remove</button>
                         </td>
                     </tr>`;
             });
@@ -1618,6 +1730,91 @@
                 stream.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 italic font-mono">No matching user records found.</td></tr>`;
             } else {
                 stream.innerHTML = htmlRows;
+            }
+        };
+
+        // 🌟 NEW FUNCTION: OPEN ADMIN USER DATA DEEP AUDIT MODAL
+        window.viewAdminUserData = function(targetUid) {
+            if (!window.allUsersCache || !window.allUsersCache[targetUid]) {
+                if (window.showCustomToast) window.showCustomToast("User record not found in cache", "error");
+                return;
+            }
+
+            const u = window.allUsersCache[targetUid];
+            const modal = document.getElementById('adminUserDetailModalOverlay');
+            
+            document.getElementById('modalUserEmailTitle').innerText = `${u.email || 'Registered User'} (Firebase UID: ${targetUid})`;
+            document.getElementById('modalUserUID').innerText = `#${u.userUid || '----'}`;
+            document.getElementById('modalUserWallet').innerText = `₹${parseFloat(u.walletBalance || 0).toFixed(2)}`;
+            document.getElementById('modalUserProvider').innerText = (u.provider === 'google' || u.provider === 'google.com') ? 'Google OAuth' : 'Email/Pass';
+            document.getElementById('modalUserRefers').innerText = u.qualifiedReferCount || 0;
+
+            // Populate Orders Table inside Modal
+            const ordersStream = document.getElementById('modalUserOrdersStream');
+            if (!u.orders || Object.keys(u.orders).length === 0) {
+                ordersStream.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 italic font-mono">No orders placed by this user yet.</td></tr>`;
+            } else {
+                let orderRows = '';
+                const now = Date.now();
+                Object.keys(u.orders).reverse().forEach(oKey => {
+                    const ord = u.orders[oKey];
+                    let currentOrdStatus = ord.status || 'Pending';
+                    if (currentOrdStatus !== 'Completed' && currentOrdStatus !== 'Cancelled') {
+                        const elapsed = (now - (ord.timestamp || now)) / 1000;
+                        if (elapsed > 120) currentOrdStatus = 'Completed';
+                        else if (elapsed > 30) currentOrdStatus = 'In Progress';
+                    }
+
+                    let stBadge = `<span class="text-amber-400 font-bold">${currentOrdStatus}</span>`;
+                    if (currentOrdStatus === 'Completed') stBadge = `<span class="text-emerald-400 font-bold">Completed</span>`;
+                    if (currentOrdStatus === 'Cancelled' || currentOrdStatus === 'Canceled') stBadge = `<span class="text-rose-400 font-bold">Cancelled</span>`;
+
+                    orderRows += `
+                        <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800/60">
+                            <td class="p-2.5 font-bold text-slate-300">${ord.rawOrderId || ord.orderId || oKey}</td>
+                            <td class="p-2.5 text-slate-300 truncate max-w-[150px]" title="${ord.serviceName}">${ord.serviceName}</td>
+                            <td class="p-2.5 text-slate-400">${ord.quantity}</td>
+                            <td class="p-2.5 font-bold text-amber-400">₹${parseFloat(ord.cost || 0).toFixed(2)}</td>
+                            <td class="p-2.5 text-sky-400 truncate max-w-[140px]"><a href="${ord.link}" target="_blank" class="hover:underline">${ord.link}</a></td>
+                            <td class="p-2.5">${stBadge}</td>
+                        </tr>
+                    `;
+                });
+                ordersStream.innerHTML = orderRows;
+            }
+
+            // Populate Transactions Table inside Modal
+            const txStream = document.getElementById('modalUserTxStream');
+            if (!u.transactions || Object.keys(u.transactions).length === 0) {
+                txStream.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-500 italic font-mono">No deposits recorded.</td></tr>`;
+            } else {
+                let txRows = '';
+                Object.keys(u.transactions).reverse().forEach(tKey => {
+                    const tx = u.transactions[tKey];
+                    let txState = `<span class="text-amber-400 font-bold">${tx.internalState}</span>`;
+                    if (tx.internalState === 'Verified') txState = `<span class="text-emerald-400 font-bold">Verified</span>`;
+                    if (tx.internalState === 'Cancelled') txState = `<span class="text-rose-400 font-bold">Cancelled</span>`;
+
+                    txRows += `
+                        <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800/60">
+                            <td class="p-2.5 font-bold text-emerald-400">₹${parseFloat(tx.value || 0).toFixed(2)}</td>
+                            <td class="p-2.5 text-slate-300 font-mono">${tx.utr || 'N/A'}</td>
+                            <td class="p-2.5">${txState}</td>
+                        </tr>
+                    `;
+                });
+                txStream.innerHTML = txRows;
+            }
+
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+        };
+
+        window.closeAdminUserDetailModal = function() {
+            const modal = document.getElementById('adminUserDetailModalOverlay');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
             }
         };
 
@@ -1902,7 +2099,6 @@
             chatStream.appendChild(loadingBubble);
             chatStream.scrollTop = chatStream.scrollHeight;
 
-            // Generate Smart instant answer directly
             setTimeout(() => {
                 loadingBubble.remove();
                 const smartAnswer = window.getSmartAiResponse(queryText);
@@ -2256,13 +2452,6 @@
         window.updateServices();
         window.switchTab('dashboard');
 
-
-
-
-
-
-        
-
 // --- App Guide & Tutorial Injection Code ---
 (() => {
     const openTutorial = () => {
@@ -2282,7 +2471,6 @@
     };
 
     const injectAppTutorialButtons = () => {
-        // 1. Login Page Injection
         const loginForm = document.querySelector('#loginForm');
         if (loginForm && !document.getElementById('btn-app-tutorial-login')) {
             const btn = createTutorialBtn('btn-app-tutorial-login');
@@ -2290,19 +2478,15 @@
             document.getElementById('btn-app-tutorial-login')?.addEventListener('click', openTutorial);
         }
 
-        // 2. Drawer Side Panel Injection (YouTube Button ke Just Niche)
         if (!document.getElementById('btn-app-tutorial-drawer')) {
-            // Aapke Drawer ka YouTube Social Button
             const ytSocialBtn = document.getElementById('btn-yt-social');
 
             if (ytSocialBtn) {
-                // Agar 2-column grid me YT button ke saath Instagram bhi hai, to poore grid container ke niche add karega
                 const targetContainer = ytSocialBtn.closest('.grid') || ytSocialBtn;
                 const btn = createTutorialBtn('btn-app-tutorial-drawer');
                 targetContainer.parentNode.insertBefore(btn, targetContainer.nextSibling);
                 document.getElementById('btn-app-tutorial-drawer')?.addEventListener('click', openTutorial);
             } else {
-                // Fallback: Directly inside #sideDrawer
                 const drawer = document.getElementById('sideDrawer');
                 if (drawer) {
                     const btn = createTutorialBtn('btn-app-tutorial-drawer');
@@ -2313,25 +2497,13 @@
         }
     };
 
-    // Initial Execute
     injectAppTutorialButtons();
 
-    // Observe DOM changes (Login ke baad Drawer open/render hone par auto-trigger)
     const observer = new MutationObserver(() => injectAppTutorialButtons());
     observer.observe(document.body, { childList: true, subtree: true });
 })();
 
-
-
-
-
-
-
-// ==========================================
         // 🔐 4-DIGIT UNIQUE UID GENERATOR & SYSTEM
-        // ==========================================
-
-        // 1. Unique 4-Digit UID Generator Function (Ensures no duplicate UID)
         window.generateUniqueUserUID = async function() {
             let isUnique = false;
             let generatedUid = "";
@@ -2340,7 +2512,6 @@
 
             while (!isUnique && attempts < 50) {
                 attempts++;
-                // 1000 se 9999 ke beech 4-digit random number
                 generatedUid = Math.floor(1000 + Math.random() * 9000).toString();
                 
                 try {
@@ -2349,14 +2520,12 @@
                         isUnique = true;
                     }
                 } catch (e) {
-                    // Fallback check from cache or direct snap
                     isUnique = true; 
                 }
             }
             return generatedUid || Math.floor(1000 + Math.random() * 9000).toString();
         };
 
-        // 2. Global UID Copy Function (User & Admin both)
         window.copyUserUIDToClipboard = function(elementId, btnElement) {
             const uidElement = document.getElementById(elementId);
             if (!uidElement) return;
@@ -2379,7 +2548,6 @@
             });
         };
 
-        // 3. Inject User Drawer UID Display Box Dynamic UI
         window.injectDrawerUIDCard = function(userUid) {
             const drawerContainer = document.getElementById('drawerUserIdentity')?.parentElement;
             if (drawerContainer && !document.getElementById('drawerUidCardBox')) {
@@ -2402,10 +2570,8 @@
             }
         };
 
-        // 4. Override / Hook Firebase User Auth Listener to Ensure Unique UID Allocation
         const originalOnAuthStateChanged = onAuthStateChanged;
         
-        // Dynamic hook into main auth stream to update UI
         const checkAndInjectUID = async (user) => {
             if (!user) return;
             const userDbRef = ref(database, 'users/' + user.uid);
@@ -2426,7 +2592,6 @@
                     currentUidVal = await window.generateUniqueUserUID();
                 }
 
-                // Inject UID Box inside Drawer UI
                 if (currentUidVal) {
                     window.injectDrawerUIDCard(currentUidVal);
                 }
@@ -2435,97 +2600,13 @@
             }
         };
 
-        // Monitor Auth Changes
         auth.onAuthStateChanged((user) => {
             if (user) {
                 checkAndInjectUID(user);
             }
         });
 
-        // 5. Update Admin User Table to Show User UID Header & Values
-        const originalRenderAdminUsers = window.renderAdminUsersList;
-        window.renderAdminUsersList = function() {
-            const stream = document.getElementById('adminUsersStream');
-            if (!stream) return;
-
-            // Admin Table Header Direct Update (Inserts UID Header if missing)
-            const tableHeadTr = stream.closest('table')?.querySelector('thead tr');
-            if (tableHeadTr && !tableHeadTr.querySelector('.uid-head-col')) {
-                const th = document.createElement('th');
-                th.className = 'p-3 sm:p-4 uid-head-col';
-                th.innerText = 'USER UID';
-                const createdCol = tableHeadTr.children[2];
-                if (createdCol) tableHeadTr.insertBefore(th, createdCol);
-            }
-
-            if (!window.allUsersCache || typeof window.allUsersCache !== 'object' || Object.keys(window.allUsersCache).length === 0) {
-                stream.innerHTML = `<tr><td colspan="7" class="p-12 text-center text-slate-500 italic font-mono">No users registered in database.</td></tr>`;
-                return;
-            }
-
-            const searchEl = document.getElementById('adminUserSearchInput');
-            const searchTerm = searchEl ? searchEl.value.trim().toLowerCase() : '';
-            let htmlRows = '';
-            let count = 0;
-
-            Object.keys(window.allUsersCache).forEach(uid => {
-                const u = window.allUsersCache[uid];
-                if (!u || typeof u !== 'object') return;
-
-                const email = u.email || `User (${uid.substring(0, 8)})`;
-                const userUidVal = u.userUid || '----';
-
-                if (searchTerm && !email.toLowerCase().includes(searchTerm) && !userUidVal.includes(searchTerm)) {
-                    return;
-                }
-                count++;
-
-                const liveBal = u.walletBalance !== undefined ? parseFloat(u.walletBalance).toFixed(2) : "0.00";
-                const safeEmail = window.escapeHtml(email);
-                const providerIcon = (u.provider === 'google' || u.provider === 'google.com') 
-                    ? `<i class="fa-brands fa-google text-rose-500 text-sm" title="Google Provider"></i>` 
-                    : `<i class="fa-solid fa-envelope text-sky-400 text-sm" title="Email Provider"></i>`;
-                const createdAtStr = window.escapeHtml(u.createdAt || '24 Jul 2026');
-                const lastSignedInStr = window.escapeHtml(u.lastSignedIn || '24 Jul 2026');
-                
-                htmlRows += `
-                    <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800 font-mono text-xs">
-                        <td class="p-3 sm:p-4 text-slate-200 font-bold truncate max-w-[180px]" title="${safeEmail}">${safeEmail}</td>
-                        <td class="p-3 sm:p-4 text-center">${providerIcon}</td>
-                        <td class="p-3 sm:p-4">
-                            <div class="flex items-center space-x-1.5">
-                                <span id="adminUid_${uid}" class="bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-md font-extrabold text-[11px]">#${userUidVal}</span>
-                                <button onclick="window.copyUserUIDToClipboard('adminUid_${uid}', this)" class="text-slate-500 hover:text-purple-400 transition p-1" title="Copy UID">
-                                    <i class="fa-regular fa-copy text-xs"></i>
-                                </button>
-                            </div>
-                        </td>
-                        <td class="p-3 sm:p-4 text-slate-400">${createdAtStr}</td>
-                        <td class="p-3 sm:p-4 text-slate-400">${lastSignedInStr}</td>
-                        <td class="p-3 sm:p-4 font-bold text-emerald-400 font-mono">₹${liveBal}</td>
-                        <td class="p-3 sm:p-4 text-right space-x-2">
-                            <button onclick="window.updateUserBalancePrompt('${uid}', '${liveBal}', '${safeEmail}')" class="bg-purple-600/80 hover:bg-purple-500 border border-purple-500/40 text-white font-bold px-3 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95">Adjust Balance</button>
-                            <button onclick="window.triggerDeleteUserModal('${uid}', '${safeEmail}')" class="bg-rose-600/80 hover:bg-rose-500 border border-rose-500/40 text-white font-bold px-3 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95"><i class="fa-solid fa-trash-can mr-1"></i>Remove</button>
-                        </td>
-                    </tr>`;
-            });
-
-            if (count === 0) {
-                stream.innerHTML = `<tr><td colspan="7" class="p-8 text-center text-slate-500 italic font-mono">No matching user records found.</td></tr>`;
-            } else {
-                stream.innerHTML = htmlRows;
-            }
-        };
-
-
-
-
-
-// =======================================================
-        // 🎁 रेफरल चैलेंज (5 दोस्तों को शेयर करें और ₹5 कमाएं) सिस्टम
-        // =======================================================
-
-        // 1. "tab-refer" सेक्शन में UI एलिमेंट्स अपने आप जोड़ें
+        // 🎁 REFERRAL CHALLENGE SYSTEM
         window.injectReferralChallengeUI = function() {
             const referTabContainer = document.getElementById('tab-refer')?.querySelector('.glass-panel');
             if (referTabContainer && !document.getElementById('referChallengeCard')) {
@@ -2548,7 +2629,6 @@
                         </button>
                     </div>
 
-                    <!-- प्रोग्रेस बार सेक्शन -->
                     <div class="space-y-1.5">
                         <div class="flex justify-between items-center text-[10px] font-mono font-bold">
                             <span class="text-slate-400">सफल रेफरल (कम से कम ₹10 डिपॉज़िट)</span>
@@ -2559,7 +2639,6 @@
                         </div>
                     </div>
 
-                    <!-- क्लेम / स्टेटस बटन बॉक्स -->
                     <div id="referClaimActionBox" class="pt-1">
                         <button id="btnCollectReferBonus" disabled type="button" onclick="window.claimReferralChallengeBonus()" class="w-full py-3 bg-slate-800 border border-slate-700 text-slate-500 font-extrabold uppercase text-xs tracking-widest rounded-xl transition flex items-center justify-center space-x-2 cursor-not-allowed">
                             <i class="fa-solid fa-lock text-xs"></i>
@@ -2571,7 +2650,6 @@
             }
         };
 
-        // 2. नियम एवं शर्तें मॉडल / पॉपअप
         window.showReferChallengeTerms = function() {
             if (window.showSecurityInfo) {
                 const titleEl = document.getElementById('legalModalTitle');
@@ -2599,7 +2677,6 @@
             }
         };
 
-        // 3. प्रोग्रेस बार और क्लेम बटन स्टेटस अपडेट करें
         window.renderReferralChallengeProgress = function() {
             window.injectReferralChallengeUI();
 
@@ -2644,7 +2721,6 @@
             }
         };
 
-        // 4. क्लेम बोनस फ़ंक्शन (Firebase में वॉलेट बैलेंस में ₹5 जोड़ता है)
         window.claimReferralChallengeBonus = async function() {
             if (!currentAuthenticatedUserToken || !userDataRecordCached) return;
 
@@ -2674,18 +2750,15 @@
             };
 
             try {
-                // Firebase अपडेट करें
                 await update(ref(database, `users/${currentAuthenticatedUserToken.uid}`), {
                     walletBalance: newBal,
                     referBonusClaimed: true
                 });
                 await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${rewardTxKey}`), txPayload);
 
-                // लोकल डेटा कैश अपडेट करें
                 userDataRecordCached.walletBalance = newBal;
                 userDataRecordCached.referBonusClaimed = true;
 
-                // UI रीडआउट अपडेट करें
                 document.getElementById('userBalance').innerText = newBal.toFixed(2);
                 window.renderReferralChallengeProgress();
 
@@ -2697,15 +2770,12 @@
             }
         };
 
-        // 5. ≥ ₹10 डिपॉज़िट वाले रेफरल की गिनती के लिए एडमिन अप्रूवल लॉजिक
         const originalCommitStateVerification = window.commitStateVerification;
         window.commitStateVerification = function(targetUid, structId, txnValue, actionType) {
-            // मौजूदा अप्रूवल लॉजिक को कॉल करें
             if (originalCommitStateVerification) {
                 originalCommitStateVerification(targetUid, structId, txnValue, actionType);
             }
 
-            // अतिरिक्त जाँच: यदि स्वीकृत डिपॉज़िट >= ₹10 है, तो रेफरर की संख्या अपडेट करें
             if (actionType === 'approve' && parseFloat(txnValue) >= 10.00) {
                 const targetUserRef = ref(database, `users/${targetUid}`);
                 get(targetUserRef).then((snap) => {
@@ -2720,9 +2790,7 @@
                                     const rData = rSnap.val();
                                     const currentCount = rData.qualifiedReferCount || 0;
                                     
-                                    // रेफरर की संख्या बढ़ाएं
                                     update(referrerRef, { qualifiedReferCount: currentCount + 1 });
-                                    // यूज़र को चिन्हित करें ताकि दोबारा न गिना जाए
                                     update(targetUserRef, { countedForReferChallenge: true });
                                 }
                             });
@@ -2732,7 +2800,6 @@
             }
         };
 
-        // 6. टैब स्विच / ऑथ लोड पर ऑटो रेंडर ट्रिगर करें
         const originalSwitchTab = window.switchTab;
         window.switchTab = function(targetId) {
             if (originalSwitchTab) originalSwitchTab(targetId);
@@ -2741,15 +2808,7 @@
             }
         };
 
-
-
-
-
-        // =======================================================
         // 🔔 RE-ENTRY REFERRAL POPUP & DYNAMIC EMAIL DP SYNC
-        // =======================================================
-
-        // 1. Inject Login Referral Popup Modal HTML dynamically
         window.injectLoginReferralPopupUI = function() {
             if (document.getElementById('loginReferralModalOverlay')) return;
 
@@ -2759,24 +2818,20 @@
             modalDiv.innerHTML = `
                 <div class="glass-panel max-w-sm w-full rounded-[28px] p-6 space-y-4 border-amber-500/40 shadow-glow-amber relative text-center overflow-hidden animate-fade-in">
                     
-                    <!-- Close Button -->
                     <button type="button" onclick="window.closeLoginReferralPopup()" class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
                         <i class="fa-solid fa-xmark text-lg"></i>
                     </button>
 
-                    <!-- Icon Banner -->
                     <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-2xl border border-amber-500/30 flex items-center justify-center mx-auto text-3xl shadow-glow-amber">
                         <i class="fa-solid fa-gift animate-bounce"></i>
                     </div>
 
-                    <!-- Main Banner Text -->
                     <div class="space-y-1">
                         <span class="text-[9px] uppercase font-mono tracking-widest text-amber-400 font-bold">Offer Alert</span>
                         <h3 class="text-lg font-black uppercase text-white tracking-tight">5 Dosto ko Share Kare Aur Paye ₹5.00!</h3>
                         <p class="text-xs text-slate-300 font-medium">Apne dosto ko app refer karein aur wallet bonus paayein.</p>
                     </div>
 
-                    <!-- Click to View Terms Button -->
                     <button type="button" onclick="window.showHindiReferTermsModal()" class="w-full py-3 bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500 hover:from-amber-400 hover:to-rose-400 text-slate-950 font-black uppercase text-xs tracking-widest rounded-xl shadow-md transition active:scale-95 flex items-center justify-center space-x-2">
                         <i class="fa-solid fa-circle-info"></i>
                         <span>Niyam Aur Shartein (Terms) Dekhein</span>
@@ -2790,12 +2845,10 @@
             document.body.appendChild(modalDiv);
         };
 
-        // 2. Open / Close Login Popup Functions (App Switching Supported)
         window.openLoginReferralPopup = function() {
             window.injectLoginReferralPopupUI();
             const modal = document.getElementById('loginReferralModalOverlay');
             if (modal) {
-                // Show global loading indicator brief flash before showing popup
                 const loader = document.getElementById('globalLoadingScreen');
                 if (loader) {
                     loader.classList.remove('hidden');
@@ -2821,7 +2874,6 @@
             }
         };
 
-        // 3. Display Hindi Terms & Conditions Modal
         window.showHindiReferTermsModal = function() {
             window.closeLoginReferralPopup();
 
@@ -2854,23 +2906,17 @@
             }
         };
 
-        // 4. Fixed Email Live Photo Sync (Gravatar + Fallback Avatar)
         window.syncUserProfilePicture = function(user) {
             const drawerLogoImg = document.getElementById('drawerUserLogo');
             if (!drawerLogoImg || !user) return;
 
-            // If Google login provided photoURL
             if (user.photoURL && user.photoURL.trim() !== '' && !user.photoURL.includes('dicebear')) {
                 drawerLogoImg.src = user.photoURL;
             } else {
-                // Generates dynamic profile picture for Email logins
                 const cleanEmail = (user.email || user.uid || 'sgsuser').trim().toLowerCase();
-                
-                // Primary: Dicebear Initial/Bot Identicon
                 const avatarUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanEmail)}&backgroundColor=0d1220`;
                 drawerLogoImg.src = avatarUrl;
                 
-                // Fallback image handler in case network blocks SVG
                 drawerLogoImg.onerror = function() {
                     this.onerror = null;
                     this.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.uid)}`;
@@ -2878,15 +2924,7 @@
             }
         };
 
-      
-
-
-
-// =======================================================
 // 📢 SLIDING PUSH HEADER NOTICE SYSTEM (USER & ADMIN)
-// =======================================================
-
-// 1. Push Header Notice UI Injector (Website content ko push karega)
 window.injectNoticeBoardUI = function() {
     if (document.getElementById('systemNoticePushBanner')) return;
 
@@ -2901,13 +2939,11 @@ window.injectNoticeBoardUI = function() {
                 <div class="w-8 h-8 rounded-xl bg-rose-500/10 border border-rose-500/30 flex items-center justify-center text-rose-400 font-bold text-sm shrink-0 animate-pulse">
                     <i class="fa-solid fa-bullhorn"></i>
                 </div>
-                <!-- Notice Text Body -->
                 <div id="systemNoticeBodyContent" class="text-xs sm:text-sm text-slate-200 font-sans leading-relaxed overflow-x-auto">
                     <span class="text-slate-400 italic">Loading announcements...</span>
                 </div>
             </div>
 
-            <!-- Close / Hide Button -->
             <button type="button" onclick="window.closeNoticeBoard()" class="text-slate-400 hover:text-rose-500 p-2 hover:bg-slate-900 rounded-xl transition shrink-0 active:scale-95">
                 <i class="fa-solid fa-xmark text-base"></i>
             </button>
@@ -2938,7 +2974,6 @@ window.openNoticeBoard = function(noticeHtml) {
 
         if (noticeTimer) clearTimeout(noticeTimer);
 
-        // 10 second baad automatic upar collapse ho jayega
         noticeTimer = setTimeout(() => {
             window.closeNoticeBoard();
         }, 10000);
@@ -2955,8 +2990,6 @@ window.closeNoticeBoard = function() {
     if (noticeTimer) clearTimeout(noticeTimer);
 };
 
-
-// 2. Realtime Listener for Users
 const listenAndShowNotice = () => {
     const noticeRef = ref(database, 'system_notice/content');
     onValue(noticeRef, (snapshot) => {
@@ -2969,8 +3002,6 @@ const listenAndShowNotice = () => {
     });
 };
 
-
-// 3. Admin Notice Editor Panel Integration
 window.injectAdminNoticeEditorUI = function() {
     const adminConsole = document.getElementById('adminCoreConsole');
     if (!adminConsole || document.getElementById('adminNoticeEditorCard')) return;
@@ -3017,7 +3048,6 @@ window.injectAdminNoticeEditorUI = function() {
     }
 };
 
-// Admin Tab Switcher override
 const originalSwitchAdminTab = window.switchAdminTab;
 window.switchAdminTab = function(tabName) {
     if (originalSwitchAdminTab) originalSwitchAdminTab(tabName);
@@ -3050,7 +3080,6 @@ window.switchAdminTab = function(tabName) {
     }
 };
 
-// 4. Save Notice to Firebase
 window.saveSystemNotice = async function() {
     const inputEl = document.getElementById('adminNoticeInput');
     if (!inputEl) return;
@@ -3064,7 +3093,6 @@ window.saveSystemNotice = async function() {
     }
 };
 
-// 5. Delete Notice from Firebase
 window.deleteSystemNotice = async function() {
     if (confirm("Kya aap sach me Notice Board clear/delete karna chahte hain?")) {
         try {
@@ -3078,7 +3106,6 @@ window.deleteSystemNotice = async function() {
     }
 };
 
-// 6. Startup & Auth Init
 window.addEventListener('DOMContentLoaded', () => {
     window.injectNoticeBoardUI();
     setTimeout(() => {
@@ -3092,11 +3119,6 @@ auth.onAuthStateChanged((user) => {
         window.injectAdminNoticeEditorUI();
     }
 });
-        
-        
-
-
-
         
     </script>
 </body>
