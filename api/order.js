@@ -19,7 +19,10 @@ export default async function handler(req, res) {
 
   try {
     const API_KEY = process.env.NEW_PROVIDER_KEY || 'ad7b6ed8b9e332b2f4b9c4840e0fb7db';
-    const body = req.body || {};
+    let body = req.body || {};
+    if (typeof body === 'string') {
+      try { body = JSON.parse(body); } catch(e) {}
+    }
 
     const formData = new URLSearchParams();
     formData.append('key', API_KEY);
