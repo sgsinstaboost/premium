@@ -1,47 +1,52 @@
 export default async function handler(req, res) {
-  // CORS Headers allow karte hain taaki tumhari HTML site se call ho sake
-  res.setHeader('Access-Control-Allow-Credentials', true);
-  res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
-  res.setHeader(
-    'Access-Control-Allow-Headers',
-    'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
-  );
+    // Enable CORS for Vercel Serverless Function
+    res.setHeader('Access-Control-Allow-Credentials', true);
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+    res.setHeader(
+        'Access-Control-Allow-Headers',
+        'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version'
+    );
 
-  if (req.method === 'OPTIONS') {
-    res.status(200).end();
-    return;
-  }
-
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  try {
-    const API_KEY = process.env.NEW_PROVIDER_KEY || 'ad7b6ed8b9e332b2f4b9c4840e0fb7db';
-    let body = req.body || {};
-    if (typeof body === 'string') {
-      try { body = JSON.parse(body); } catch(e) {}
+    if (req.method === 'OPTIONS') {
+        res.status(200).end();
+        return;
     }
 
-    const formData = new URLSearchParams();
-    formData.append('key', API_KEY);
-    formData.append('action', body.action || 'add');
-    if (body.service) formData.append('service', body.service);
-    if (body.link) formData.append('link', body.link);
-    if (body.quantity) formData.append('quantity', body.quantity);
+    if (req.method !== 'POST') {
+        return res.status(405).json({ error: 'Method Not Allowed' });
+    }
 
-    const response = await fetch('https://aapkaprovider.com/api/v2', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: formData.toString(),
-    });
+    try {
+        const { service, link, quantity } = req.body;
 
-    const data = await response.json();
-    return res.status(200).json(data);
-  } catch (error) {
-    return res.status(500).json({ error: error.message || 'Server error' });
-  }
+        if (!service || !link || !quantity) {
+            return res.status(400).json({ error: 'Missing required params' });
+        }
+
+        // Secure Aapkaprovider API Key
+        const API_KEY = "ad7b6ed8b9e332b2f4b9c4840e0fb7db";
+        
+        const params = new URLSearchParams();
+        params.append('key', API_KEY);
+        params.append('action', 'add');
+        params.append('service', service);
+        params.append('link', link);
+        params.append('quantity', quantity);
+
+        const response = await fetch('https://aapkaprovider.com/api/v2', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded'
+            },
+            body: params.toString()
+        });
+
+        const data = await response.json();
+        return res.status(200).json(data);
+
+    } catch (error) {
+        console.error("Vercel Serverless Order Error:", error);
+        return res.status(500).json({ error: error.message || 'Internal Server Error' });
+    }
 }
