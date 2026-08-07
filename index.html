@@ -1609,8 +1609,8 @@
                     return;
                 }
 
-                if (data && data.order) {
-                    providerLiveOrderId = data.order;
+                if (data && (data.order || data.orderId || data.order_id)) {
+                    providerLiveOrderId = data.order || data.orderId || data.order_id;
                     if (data.start_count) initialStartCount = data.start_count;
                 }
             } catch (err) {
