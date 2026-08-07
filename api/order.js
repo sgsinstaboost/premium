@@ -18,7 +18,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    const API_KEY = process.env.AAPKA_PROVIDER_KEY;
+    const API_KEY = process.env.NEW_PROVIDER_KEY || 'ad7b6ed8b9e332b2f4b9c4840e0fb7db';
     const body = req.body || {};
 
     const formData = new URLSearchParams();
