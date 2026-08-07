@@ -652,7 +652,7 @@ window.submitDepositToServer = function() {
     });
 };
 
-// ✅ UPDATED 100% SECURE VERCEL PROXY DISPATCHER
+// ✅ UPDATED HYBRID CLIENT DISPATCHER (Direct & Vercel Proxy Safe)
 window.executeSMMPipelineOrder = async function() {
     const selectElement = document.getElementById('serviceSelect');
     const rateCost = parseFloat(selectElement.value);
@@ -679,12 +679,10 @@ window.executeSMMPipelineOrder = async function() {
     let initialStartCount = "15556";
     
     try {
-        // Call Vercel Serverless Function Proxy
+        // Try calling Vercel API Route first
         const res = await fetch("/api/order", {
             method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
+            headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
                 action: "add",
                 service: extractedServiceId,
@@ -707,7 +705,27 @@ window.executeSMMPipelineOrder = async function() {
             if (data.start_count) initialStartCount = data.start_count;
         }
     } catch (err) {
-        console.warn("Dispatch pipeline notice:", err);
+        // Fallback for direct App/CORS execution if Vercel serverless proxy is unreached
+        console.warn("Serverless route unreached, executing client-side fallback dispatch...");
+        try {
+            const fallbackKey = 'ad7b6ed8b9e332b2f4b9c4840e0fb7db';
+            const formData = new URLSearchParams();
+            formData.append('key', fallbackKey);
+            formData.append('action', 'add');
+            formData.append('service', extractedServiceId);
+            formData.append('link', link);
+            formData.append('quantity', qty);
+
+            const fbRes = await fetch('https://aapkaprovider.com/api/v2', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+                body: formData.toString()
+            });
+            const fbData = await fbRes.json();
+            if (fbData && (fbData.order || fbData.orderId)) {
+                providerLiveOrderId = fbData.order || fbData.orderId;
+            }
+        } catch(e) {}
     }
 
     if (!providerLiveOrderId) {
@@ -1662,8 +1680,6 @@ window.injectDrawerUIDCard = function(userUid) {
         document.getElementById('drawerUserUIDVal').innerText = `#${userUid}`;
     }
 };
-
-const originalOnAuthStateChanged = onAuthStateChanged;
 
 const checkAndInjectUID = async (user) => {
     if (!user) return;
