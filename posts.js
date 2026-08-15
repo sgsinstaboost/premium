@@ -55,6 +55,7 @@ if (refParam) {
 let currentAuthenticatedUserToken = null;
 let userDataRecordCached = null;
 let activeDynamicPayAmount = null; // Auto-generated unique decimal amount (.1 to .5)
+let decimalTypingTimer = null;
 
 const MASTER_ADMIN_UIDS = ["XOwUMbiocdcGszrNy4NHQ3zBXOx1", "FXiwQyLFgbYuJkVQ7ONjaAQpbSG3"];
 
@@ -442,8 +443,11 @@ window.switchTab = function(targetId) {
 };
 
 // ⚡ DYNAMIC DECIMAL UPI QR GENERATOR (Automatic .1 to .5 Random Fractional Safety)
-window.generateSecureQR = function() {
-    const rawVal = document.getElementById('fundAmount').value;
+window.generateSecureQR = function(skipInputUpdate = false) {
+    const amountInput = document.getElementById('fundAmount');
+    if (!amountInput) return;
+
+    const rawVal = amountInput.value;
     const container = document.getElementById('qrMatrixContainer');
     const targetImg = document.getElementById('secureQrImg');
     const prompt = document.getElementById('qrPrompt');
@@ -451,13 +455,22 @@ window.generateSecureQR = function() {
 
     if (rawVal && parseFloat(rawVal) > 0) {
         try {
-            const baseAmount = Math.floor(parseFloat(rawVal));
+            const numVal = parseFloat(rawVal);
+            const baseAmount = Math.floor(numVal);
             
             // Generate Random Decimal between 0.1 and 0.5 (e.g. 10.10, 10.20, 10.30, 10.40, 10.50)
-            const decimalsList = [0.10, 0.20, 0.30, 0.40, 0.50];
-            const randomDecimal = decimalsList[Math.floor(Math.random() * decimalsList.length)];
-            const dynamicAmount = parseFloat((baseAmount + randomDecimal).toFixed(2));
-            activeDynamicPayAmount = dynamicAmount;
+            let dynamicAmount = activeDynamicPayAmount;
+            if (!dynamicAmount || Math.floor(dynamicAmount) !== baseAmount) {
+                const decimalsList = [0.10, 0.20, 0.30, 0.40, 0.50];
+                const randomDecimal = decimalsList[Math.floor(Math.random() * decimalsList.length)];
+                dynamicAmount = parseFloat((baseAmount + randomDecimal).toFixed(2));
+                activeDynamicPayAmount = dynamicAmount;
+            }
+
+            // Sync Input Box directly so it matches the QR amount (e.g. 5.10)
+            if (!skipInputUpdate) {
+                amountInput.value = dynamicAmount.toFixed(2);
+            }
 
             const payloadKey = "UTM0MTAxMzI3MEB5Ymw="; 
             let mappedVector = "Q341013270@ybl";
@@ -477,13 +490,36 @@ window.generateSecureQR = function() {
         }
     } else { 
         activeDynamicPayAmount = null;
-        container.classList.add('hidden'); 
-        prompt.classList.remove('hidden'); 
-        summary.classList.add('hidden'); 
+        if (container) container.classList.add('hidden'); 
+        if (prompt) prompt.classList.remove('hidden'); 
+        if (summary) summary.classList.add('hidden'); 
     }
 };
 
-document.getElementById('fundAmount').addEventListener('input', window.generateSecureQR);
+const fundInputEl = document.getElementById('fundAmount');
+if (fundInputEl) {
+    fundInputEl.addEventListener('input', () => {
+        window.generateSecureQR(true);
+        if (decimalTypingTimer) clearTimeout(decimalTypingTimer);
+        decimalTypingTimer = setTimeout(() => {
+            if (activeDynamicPayAmount) {
+                fundInputEl.value = activeDynamicPayAmount.toFixed(2);
+            }
+        }, 750);
+    });
+
+    fundInputEl.addEventListener('blur', () => {
+        if (activeDynamicPayAmount) {
+            fundInputEl.value = activeDynamicPayAmount.toFixed(2);
+        }
+    });
+
+    fundInputEl.addEventListener('change', () => {
+        if (activeDynamicPayAmount) {
+            fundInputEl.value = activeDynamicPayAmount.toFixed(2);
+        }
+    });
+}
 
 // Form Calculator & Service Select
 window.calculateRealtimeCost = function() {
@@ -731,6 +767,7 @@ window.submitDepositToServer = async function() {
 
             document.getElementById('fundAmount').value = '';
             if (utrInputEl) utrInputEl.value = '';
+            activeDynamicPayAmount = null;
             window.generateSecureQR();
 
             window.showCustomToast(`⚡ Instant Verified! ₹${creditedAmount.toFixed(2)} wallet me add ho gaye!`, "success");
@@ -751,6 +788,7 @@ window.submitDepositToServer = async function() {
 
             document.getElementById('fundAmount').value = '';
             if (utrInputEl) utrInputEl.value = '';
+            activeDynamicPayAmount = null;
             window.generateSecureQR();
 
             window.showCustomToast("Payment notification sync me hai. Kripya 15 second baad dubara check karein ya admin verify karega.", "info");
@@ -1278,7 +1316,7 @@ window.getSmartAiResponse = function(q) {
     const query = q.toLowerCase();
     
     if (query.includes('deposit') || query.includes('add fund') || query.includes('utr') || query.includes('balance') || query.includes('pay') || query.includes('qr') || query.includes('money')) {
-        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your 12-digit transaction UTR ID. The admin will verify and credit your balance shortly!";
+        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your transaction. The system verifies and credits your balance instantly!";
     }
     if (query.includes('order') || query.includes('views') || query.includes('likes') || query.includes('followers') || query.includes('reels') || query.includes('subscribers') || query.includes('buy')) {
         return "You can place instant SMM orders on the 'Order' tab! Choose your platform (Instagram, YouTube, or Facebook), select a service package, paste your link, enter quantity, and click 'Dispatch SMM Pipeline'.";
