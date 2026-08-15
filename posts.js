@@ -317,9 +317,9 @@ onAuthStateChanged(auth, async (user) => {
             } else {
                 userDataRecordCached = { 
                     email: userEmail, 
-                    provider: providerTypeStr,
-                    createdAt: creationTimeStr,
-                    lastSignedIn: lastSignInTimeStr,
+                    provider: providerTypeStr, 
+                    createdAt: creationTimeStr, 
+                    lastSignedIn: lastSignInTimeStr, 
                     walletBalance: 0.00, 
                     transactions: {}, 
                     orders: {} 
@@ -619,37 +619,136 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling
-window.submitDepositToServer = function() {
+// ⚡ UPDATED INSTANT AUTO-VERIFY DEPOSIT HANDLER (PhonePe MacroDroid + Firebase Engine)
+window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
     const utrString = document.getElementById('utrInput').value.trim();
-    if (!value || value <= 0 || !utrString || utrString.length < 6) { window.showCustomToast("Validation report error. Verify inputs.", "error"); return; }
+    const submitBtn = document.getElementById('submit-deposit-btn');
+
+    if (!value || value <= 0 || !utrString || utrString.length < 6) { 
+        window.showCustomToast("Validation report error. Verify inputs.", "error"); 
+        return; 
+    }
 
     if (!currentAuthenticatedUserToken) {
         window.showCustomToast("Session error: Please re-login.", "error");
         return;
     }
 
-    const uniqueTxHashKey = 'tx_' + Date.now();
-    const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
-    const activeObjectPayload = { 
-        structId: uniqueTxHashKey, 
-        uid: currentAuthenticatedUserToken.uid, 
-        email: userEmailStr, 
-        value: value, 
-        utr: utrString, 
-        internalState: 'Processing' 
-    };
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>VERIFYING PAYMENT...</span><i class="fa-solid fa-spinner animate-spin"></i>`;
+    }
 
-    set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
-    set(ref(database, `global_deposits/${uniqueTxHashKey}`), activeObjectPayload).then(() => {
-        document.getElementById('fundAmount').value = '';
-        document.getElementById('utrInput').value = '';
-        window.generateSecureQR();
-        window.showCustomToast("SLA Clearance report generated! Awaiting audits verification.", "success");
-    }).catch((err) => {
+    try {
+        // 1. Check if UTR was already used
+        const existingTxCheck = await get(ref(database, `used_utrs/${utrString}`));
+        if (existingTxCheck.exists()) {
+            window.showCustomToast("Yeh UTR ID pehle se use ki ja chuki hai!", "error");
+            return;
+        }
+
+        // 2. Fetch payments pushed by MacroDroid PhonePe notifications
+        const paymentsSnap = await get(ref(database, 'payments'));
+        let isAutoVerified = false;
+        let matchedPaymentKey = null;
+
+        if (paymentsSnap.exists()) {
+            const allPayments = paymentsSnap.val();
+            
+            for (let pKey in allPayments) {
+                const p = allPayments[pKey];
+                const fullText = `${p.title || ''} ${p.body || ''}`.toLowerCase();
+
+                const hasUTR = fullText.includes(utrString.toLowerCase());
+                const hasAmount = fullText.includes(value.toString()) || fullText.includes(value.toFixed(2));
+
+                if (hasUTR || (fullText.includes(utrString.slice(-6)) && hasAmount)) {
+                    isAutoVerified = true;
+                    matchedPaymentKey = pKey;
+                    break;
+                }
+            }
+        }
+
+        const uniqueTxHashKey = 'tx_' + Date.now();
+        const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+        const userUid = currentAuthenticatedUserToken.uid;
+
+        if (isAutoVerified) {
+            // ✅ INSTANT AUTO-APPROVAL
+            const activeObjectPayload = { 
+                structId: uniqueTxHashKey, 
+                uid: userUid, 
+                email: userEmailStr, 
+                value: value, 
+                utr: utrString, 
+                internalState: 'Verified',
+                verifiedAt: Date.now()
+            };
+
+            const userBalRef = ref(database, `users/${userUid}/walletBalance`);
+            const curBalSnap = await get(userBalRef);
+            const currentBal = curBalSnap.exists() ? parseFloat(curBalSnap.val() || 0) : 0;
+            const newBal = currentBal + value;
+
+            await update(ref(database, `users/${userUid}`), { walletBalance: newBal });
+            await set(ref(database, `users/${userUid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
+            await set(ref(database, `used_utrs/${utrString}`), { uid: userUid, amount: value, timestamp: Date.now() });
+
+            if (matchedPaymentKey) {
+                await set(ref(database, `payments/${matchedPaymentKey}`), null);
+            }
+
+            if (userDataRecordCached) {
+                userDataRecordCached.walletBalance = newBal;
+                if (!userDataRecordCached.transactions) userDataRecordCached.transactions = {};
+                userDataRecordCached.transactions[uniqueTxHashKey] = activeObjectPayload;
+            }
+
+            document.getElementById('userBalance').innerText = newBal.toFixed(2);
+            renderCachedUserStateData();
+
+            if (window.commitStateVerification) {
+                window.commitStateVerification(userUid, uniqueTxHashKey, value, 'approve');
+            }
+
+            document.getElementById('fundAmount').value = '';
+            document.getElementById('utrInput').value = '';
+            window.generateSecureQR();
+
+            window.showCustomToast(`⚡ Instant Verified! ₹${value.toFixed(2)} wallet me add ho gaye!`, "success");
+
+        } else {
+            // ⏳ Fallback to manual queue if phone notification hasn't synced yet
+            const fallbackPayload = { 
+                structId: uniqueTxHashKey, 
+                uid: userUid, 
+                email: userEmailStr, 
+                value: value, 
+                utr: utrString, 
+                internalState: 'Processing' 
+            };
+
+            await set(ref(database, `users/${userUid}/transactions/${uniqueTxHashKey}`), fallbackPayload);
+            await set(ref(database, `global_deposits/${uniqueTxHashKey}`), fallbackPayload);
+
+            document.getElementById('fundAmount').value = '';
+            document.getElementById('utrInput').value = '';
+            window.generateSecureQR();
+
+            window.showCustomToast("SLA Clearance report generated! Awaiting audits verification.", "success");
+        }
+
+    } catch (err) {
+        console.error("Auto verification error:", err);
         window.showCustomToast("Deposit submission error: " + err.message, "error");
-    });
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `<span>Submit Transaction</span><i class="fa-solid fa-arrow-right"></i>`;
+        }
+    }
 };
 
 // ✅ UPDATED HYBRID CLIENT DISPATCHER (Direct & Vercel Proxy Safe)
