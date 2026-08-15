@@ -56,6 +56,7 @@ let currentAuthenticatedUserToken = null;
 let userDataRecordCached = null;
 let activeDynamicPayAmount = null; // Auto-generated unique decimal amount (.1 to .5)
 let decimalTypingTimer = null;
+let autoVerifyPaymentListener = null;
 
 const MASTER_ADMIN_UIDS = ["XOwUMbiocdcGszrNy4NHQ3zBXOx1", "FXiwQyLFgbYuJkVQ7ONjaAQpbSG3"];
 
@@ -442,7 +443,7 @@ window.switchTab = function(targetId) {
     }
 };
 
-// ⚡ DYNAMIC DECIMAL UPI QR GENERATOR (Automatic .1 to .5 Random Fractional Safety)
+// ⚡ DYNAMIC DECIMAL UPI QR GENERATOR WITH AUTO-INPUT VALUE SYNC
 window.generateSecureQR = function(skipInputUpdate = false) {
     const amountInput = document.getElementById('fundAmount');
     if (!amountInput) return;
@@ -485,6 +486,10 @@ window.generateSecureQR = function(skipInputUpdate = false) {
             prompt.classList.add('hidden');
             summary.innerHTML = `<span class="text-amber-400">PAY EXACT:</span> <span class="text-emerald-400 text-sm font-black">₹${dynamicAmount.toFixed(2)}</span> <span class="text-[9px] text-slate-400 block mt-0.5 font-sans">₹${baseAmount} Wallet Credit + Unique Decimal Auto-Security</span>`; 
             summary.classList.remove('hidden');
+
+            // Start Realtime Background Listener to auto-add within 2-3 seconds
+            window.listenForInstantLiveDeposit();
+
         } catch(qrErr) {
             console.error("QR Generation Failure: ", qrErr);
         }
@@ -520,6 +525,92 @@ if (fundInputEl) {
         }
     });
 }
+
+// 🚀 REALTIME AUTO-LISTENER: CREDITS WALLET IN 2-3 SECONDS & DELETES NOTIFICATION
+window.listenForInstantLiveDeposit = function() {
+    if (!currentAuthenticatedUserToken || !activeDynamicPayAmount) return;
+    
+    const paymentsRef = ref(database, 'payments');
+    onValue(paymentsRef, async (snapshot) => {
+        if (!snapshot.exists() || !activeDynamicPayAmount || !currentAuthenticatedUserToken) return;
+        
+        const allPayments = snapshot.val();
+        const targetAmount = activeDynamicPayAmount;
+        const targetExactVal = targetAmount.toFixed(2);
+        const targetInt = Math.floor(targetAmount);
+
+        for (let pKey in allPayments) {
+            const p = allPayments[pKey];
+            const fullText = `${p.title || ''} ${p.body || ''}`.toLowerCase();
+
+            // Match exact decimal or integer or money received text
+            const hasMatch = fullText.includes(targetAmount.toString()) || 
+                             fullText.includes(targetExactVal) || 
+                             fullText.includes(`₹${targetAmount}`) ||
+                             fullText.includes(`₹ ${targetAmount}`) ||
+                             fullText.includes(`rs ${targetAmount}`) ||
+                             fullText.includes(`rs. ${targetAmount}`) ||
+                             (fullText.includes("money received") && fullText.includes(targetInt.toString()));
+
+            if (hasMatch) {
+                // Auto Trigger Instant Credit
+                const matchedKey = pKey;
+                const userUid = currentAuthenticatedUserToken.uid;
+                const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+                const uniqueTxHashKey = 'tx_' + Date.now();
+                const finalUtrRef = `DECIMAL_INR_${targetExactVal}_${uniqueTxHashKey.slice(-6)}`;
+
+                const activeObjectPayload = { 
+                    structId: uniqueTxHashKey, 
+                    uid: userUid, 
+                    email: userEmailStr, 
+                    value: targetAmount, 
+                    utr: finalUtrRef, 
+                    internalState: 'Verified',
+                    verifiedAt: Date.now()
+                };
+
+                try {
+                    const userBalRef = ref(database, `users/${userUid}/walletBalance`);
+                    const curBalSnap = await get(userBalRef);
+                    const currentBal = curBalSnap.exists() ? parseFloat(curBalSnap.val() || 0) : 0;
+                    const newBal = currentBal + targetAmount;
+
+                    await update(ref(database, `users/${userUid}`), { walletBalance: newBal });
+                    await set(ref(database, `users/${userUid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
+                    await set(ref(database, `used_utrs/${finalUtrRef}`), { uid: userUid, amount: targetAmount, timestamp: Date.now() });
+
+                    // 🗑️ DELETE IMMEDIATELY FROM FIREBASE
+                    await set(ref(database, `payments/${matchedKey}`), null);
+
+                    if (userDataRecordCached) {
+                        userDataRecordCached.walletBalance = newBal;
+                        if (!userDataRecordCached.transactions) userDataRecordCached.transactions = {};
+                        userDataRecordCached.transactions[uniqueTxHashKey] = activeObjectPayload;
+                    }
+
+                    document.getElementById('userBalance').innerText = newBal.toFixed(2);
+                    renderCachedUserStateData();
+
+                    if (window.commitStateVerification) {
+                        window.commitStateVerification(userUid, uniqueTxHashKey, targetAmount, 'approve');
+                    }
+
+                    document.getElementById('fundAmount').value = '';
+                    const utrInputEl = document.getElementById('utrInput');
+                    if (utrInputEl) utrInputEl.value = '';
+                    activeDynamicPayAmount = null;
+                    window.generateSecureQR();
+
+                    window.showCustomToast(`⚡ Instant Verified! ₹${targetAmount.toFixed(2)} wallet me add ho gaye!`, "success");
+                    break;
+                } catch (e) {
+                    console.error("Instant listener credit error:", e);
+                }
+            }
+        }
+    });
+};
 
 // Form Calculator & Service Select
 window.calculateRealtimeCost = function() {
@@ -706,11 +797,14 @@ window.submitDepositToServer = async function() {
 
                 // Format 1: Exact Decimal Amount Match (e.g. ₹10.30 or 10.3)
                 const hasExactDecimal = fullText.includes(creditedAmount.toString()) || 
-                                      fullText.includes(targetExactVal) ||
+                                      fullText.includes(targetExactVal) || 
                                       fullText.includes(`₹${creditedAmount}`) ||
-                                      fullText.includes(`₹ ${creditedAmount}`);
+                                      fullText.includes(`₹ ${creditedAmount}`) ||
+                                      fullText.includes(`rs ${creditedAmount}`) ||
+                                      fullText.includes(`rs. ${creditedAmount}`) ||
+                                      (fullText.includes("money received") && fullText.includes(targetBaseInt.toString()));
                 
-                // Format 2: Direct UTR in text (if user still enters UTR optionally)
+                // Format 2: Direct UTR in text (if user enters UTR optionally)
                 const hasUTR = utrString.length >= 6 && fullText.includes(utrString.toLowerCase());
 
                 if (hasExactDecimal || hasUTR) {
