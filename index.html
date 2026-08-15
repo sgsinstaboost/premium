@@ -298,7 +298,7 @@
                     <i class="fa-solid fa-folder-open text-sky-400"></i><span>Order Logs</span>
                 </button>
                 <button id="tab-btn-addfunds" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
-                    <i class="fa-solid fa-wallet text-emerald-400"></i><span>Settle Wallet</span>
+                    <i class="fa-solid fa-bolt text-amber-400 animate-pulse"></i><span>Instant Deposit</span>
                 </button>
                 <button id="tab-btn-refer" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
                     <i class="fa-solid fa-gift text-amber-500"></i><span>Affiliate Program</span>
@@ -494,16 +494,19 @@
                     </div>
                 </section>
 
-                <!-- TAB 3: ADD DEPOSIT FUNDS CENTER -->
+                <!-- TAB 3: ADD DEPOSIT FUNDS CENTER (⚡ AUTO-VERIFY READY) -->
                 <section id="tab-addfunds" class="space-y-6 tab-content hidden">
                     <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
                         <div class="xl:col-span-2 glass-panel p-5 sm:p-7 rounded-[32px] space-y-5">
-                            <div class="border-b border-slate-800/60 pb-3">
-                                <h2 class="text-base sm:text-lg font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
-                                    <i class="fa-solid fa-shield-halved"></i>
-                                    <span>Wallet Settlement Clearance</span>
-                                </h2>
-                                <p class="text-xs text-slate-400 font-mono mt-0.5">Initialize and settle transactions via instant UPI QR</p>
+                            <div class="border-b border-slate-800/60 pb-3 flex items-center justify-between">
+                                <div>
+                                    <h2 class="text-base sm:text-lg font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
+                                        <i class="fa-solid fa-bolt text-amber-400 animate-pulse"></i>
+                                        <span>Instant Auto-Verify Deposit</span>
+                                    </h2>
+                                    <p class="text-xs text-slate-400 font-mono mt-0.5">Automated UPI QR Settlement (Zero Admin Approval Required)</p>
+                                </div>
+                                <span class="hidden sm:inline-block bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">⚡ AUTO-CREDIT (1-2s)</span>
                             </div>
 
                             <div class="space-y-4">
@@ -518,13 +521,14 @@
                                     <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">B. 12-Digit Transaction Reference (UTR ID)</label>
                                     <div class="relative">
                                         <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-fingerprint text-sm"></i></span>
-                                        <input type="text" id="utrInput" placeholder="Ex: 340912xxxxxx" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-mono transition">
+                                        <input type="text" id="utrInput" placeholder="Enter 12-digit UTR (Ex: 4235...)" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-mono transition">
                                     </div>
-                                    <p class="text-[9px] text-slate-500 font-mono mt-2 leading-relaxed">Please submit the official 12-digit transaction UTR ID issued by your banking application to automatically clear balance verification.</p>
+                                    <p class="text-[9px] text-slate-500 font-mono mt-2 leading-relaxed">Apne PhonePe ya banking app se payment karke 12-digit UTR ID darj karein. System 1-2 second me wallet balance add kar dega.</p>
                                 </div>
 
-                                <button id="submit-deposit-btn" class="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold uppercase tracking-widest text-xs rounded-2xl shadow-glow-emerald transition active:scale-[0.98]">
-                                    Submit Clearance Report
+                                <button id="submit-deposit-btn" class="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold uppercase tracking-widest text-xs rounded-2xl shadow-glow-emerald transition active:scale-[0.98] flex items-center justify-center space-x-2">
+                                    <i class="fa-solid fa-bolt text-amber-400"></i>
+                                    <span>⚡ Instant Verify & Add Fund</span>
                                 </button>
                             </div>
                         </div>
