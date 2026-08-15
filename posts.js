@@ -54,9 +54,6 @@ if (refParam) {
 // Core Shared Context State Variables
 let currentAuthenticatedUserToken = null;
 let userDataRecordCached = null;
-let activeDynamicPayAmount = null; // Auto-generated unique decimal amount (.1 to .5)
-let decimalTypingTimer = null;
-let autoVerifyPaymentListener = null;
 
 const MASTER_ADMIN_UIDS = ["XOwUMbiocdcGszrNy4NHQ3zBXOx1", "FXiwQyLFgbYuJkVQ7ONjaAQpbSG3"];
 
@@ -320,9 +317,9 @@ onAuthStateChanged(auth, async (user) => {
             } else {
                 userDataRecordCached = { 
                     email: userEmail, 
-                    provider: providerTypeStr, 
-                    createdAt: creationTimeStr, 
-                    lastSignedIn: lastSignInTimeStr, 
+                    provider: providerTypeStr,
+                    createdAt: creationTimeStr,
+                    lastSignedIn: lastSignInTimeStr,
                     walletBalance: 0.00, 
                     transactions: {}, 
                     orders: {} 
@@ -443,175 +440,40 @@ window.switchTab = function(targetId) {
     }
 };
 
-// ⚡ DYNAMIC DECIMAL UPI QR GENERATOR WITH AUTO-INPUT VALUE SYNC
-window.generateSecureQR = function(skipInputUpdate = false) {
-    const amountInput = document.getElementById('fundAmount');
-    if (!amountInput) return;
-
-    const rawVal = amountInput.value;
+// QR Code Generator
+window.generateSecureQR = function() {
+    const requestedAmount = document.getElementById('fundAmount').value;
     const container = document.getElementById('qrMatrixContainer');
     const targetImg = document.getElementById('secureQrImg');
     const prompt = document.getElementById('qrPrompt');
     const summary = document.getElementById('qrDataSummary');
 
-    if (rawVal && parseFloat(rawVal) > 0) {
+    if (requestedAmount && parseFloat(requestedAmount) > 0) {
         try {
-            const numVal = parseFloat(rawVal);
-            const baseAmount = Math.floor(numVal);
-            
-            // Generate Random Decimal between 0.1 and 0.5 (e.g. 10.10, 10.20, 10.30, 10.40, 10.50)
-            let dynamicAmount = activeDynamicPayAmount;
-            if (!dynamicAmount || Math.floor(dynamicAmount) !== baseAmount) {
-                const decimalsList = [0.10, 0.20, 0.30, 0.40, 0.50];
-                const randomDecimal = decimalsList[Math.floor(Math.random() * decimalsList.length)];
-                dynamicAmount = parseFloat((baseAmount + randomDecimal).toFixed(2));
-                activeDynamicPayAmount = dynamicAmount;
-            }
-
-            // Sync Input Box directly so it matches the QR amount (e.g. 5.10)
-            if (!skipInputUpdate) {
-                amountInput.value = dynamicAmount.toFixed(2);
-            }
-
-            const payloadKey = "UTM0MTAxMzI3MEB5Ymw="; 
-            let mappedVector = "Q341013270@ybl";
+            const payloadKey = "Z3BheS0xMjE5NjU1NDY2MkBva2JpemF4aXM="; 
+            let mappedVector = "gpay-12196554662@okbizaxis";
             try {
                 mappedVector = atob(payloadKey);
             } catch(b64Error) {}
             
-            const upiUri = `upi://pay?pa=${encodeURIComponent(mappedVector)}&pn=SGS_UPDATES&am=${dynamicAmount}&cu=INR`;
+            const upiUri = `upi://pay?pa=${encodeURIComponent(mappedVector)}&pn=SGS_UPDATES&am=${requestedAmount}&cu=INR`;
             targetImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=${encodeURIComponent(upiUri)}`;
             
             container.classList.remove('hidden'); 
             prompt.classList.add('hidden');
-            summary.innerHTML = `<span class="text-amber-400">PAY EXACT:</span> <span class="text-emerald-400 text-sm font-black">₹${dynamicAmount.toFixed(2)}</span> <span class="text-[9px] text-slate-400 block mt-0.5 font-sans">₹${baseAmount} Wallet Credit + Unique Decimal Auto-Security</span>`; 
+            summary.innerText = `ENDPOINT METRIC SECURED: INT-₹${parseFloat(requestedAmount).toFixed(2)}`; 
             summary.classList.remove('hidden');
-
-            // Start Realtime Background Listener to auto-add within 2-3 seconds
-            window.listenForInstantLiveDeposit();
-
         } catch(qrErr) {
             console.error("QR Generation Failure: ", qrErr);
         }
     } else { 
-        activeDynamicPayAmount = null;
-        if (container) container.classList.add('hidden'); 
-        if (prompt) prompt.classList.remove('hidden'); 
-        if (summary) summary.classList.add('hidden'); 
+        container.classList.add('hidden'); 
+        prompt.classList.remove('hidden'); 
+        summary.classList.add('hidden'); 
     }
 };
 
-const fundInputEl = document.getElementById('fundAmount');
-if (fundInputEl) {
-    fundInputEl.addEventListener('input', () => {
-        window.generateSecureQR(true);
-        if (decimalTypingTimer) clearTimeout(decimalTypingTimer);
-        decimalTypingTimer = setTimeout(() => {
-            if (activeDynamicPayAmount) {
-                fundInputEl.value = activeDynamicPayAmount.toFixed(2);
-            }
-        }, 750);
-    });
-
-    fundInputEl.addEventListener('blur', () => {
-        if (activeDynamicPayAmount) {
-            fundInputEl.value = activeDynamicPayAmount.toFixed(2);
-        }
-    });
-
-    fundInputEl.addEventListener('change', () => {
-        if (activeDynamicPayAmount) {
-            fundInputEl.value = activeDynamicPayAmount.toFixed(2);
-        }
-    });
-}
-
-// 🚀 REALTIME AUTO-LISTENER: CREDITS WALLET IN 2-3 SECONDS & DELETES NOTIFICATION
-window.listenForInstantLiveDeposit = function() {
-    if (!currentAuthenticatedUserToken || !activeDynamicPayAmount) return;
-    
-    const paymentsRef = ref(database, 'payments');
-    onValue(paymentsRef, async (snapshot) => {
-        if (!snapshot.exists() || !activeDynamicPayAmount || !currentAuthenticatedUserToken) return;
-        
-        const allPayments = snapshot.val();
-        const targetAmount = activeDynamicPayAmount;
-        const targetExactVal = targetAmount.toFixed(2);
-        const targetInt = Math.floor(targetAmount);
-
-        for (let pKey in allPayments) {
-            const p = allPayments[pKey];
-            const fullText = `${p.title || ''} ${p.body || ''}`.toLowerCase();
-
-            // Match exact decimal or integer or money received text or generic title match
-            const hasMatch = fullText.includes(targetAmount.toString()) || 
-                             fullText.includes(targetExactVal) || 
-                             fullText.includes(`₹${targetAmount}`) ||
-                             fullText.includes(`₹ ${targetAmount}`) ||
-                             fullText.includes(`rs ${targetAmount}`) ||
-                             fullText.includes(`rs. ${targetAmount}`) ||
-                             fullText.includes("money received") ||
-                             (fullText.includes("received") && fullText.includes(targetInt.toString()));
-
-            if (hasMatch) {
-                // Auto Trigger Instant Credit
-                const matchedKey = pKey;
-                const userUid = currentAuthenticatedUserToken.uid;
-                const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
-                const uniqueTxHashKey = 'tx_' + Date.now();
-                const finalUtrRef = `DECIMAL_INR_${targetExactVal}_${uniqueTxHashKey.slice(-6)}`;
-
-                const activeObjectPayload = { 
-                    structId: uniqueTxHashKey, 
-                    uid: userUid, 
-                    email: userEmailStr, 
-                    value: targetAmount, 
-                    utr: finalUtrRef, 
-                    internalState: 'Verified',
-                    verifiedAt: Date.now()
-                };
-
-                try {
-                    const userBalRef = ref(database, `users/${userUid}/walletBalance`);
-                    const curBalSnap = await get(userBalRef);
-                    const currentBal = curBalSnap.exists() ? parseFloat(curBalSnap.val() || 0) : 0;
-                    const newBal = currentBal + targetAmount;
-
-                    await update(ref(database, `users/${userUid}`), { walletBalance: newBal });
-                    await set(ref(database, `users/${userUid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
-                    await set(ref(database, `used_utrs/${finalUtrRef}`), { uid: userUid, amount: targetAmount, timestamp: Date.now() });
-
-                    // 🗑️ DELETE IMMEDIATELY FROM FIREBASE
-                    await set(ref(database, `payments/${matchedKey}`), null);
-
-                    if (userDataRecordCached) {
-                        userDataRecordCached.walletBalance = newBal;
-                        if (!userDataRecordCached.transactions) userDataRecordCached.transactions = {};
-                        userDataRecordCached.transactions[uniqueTxHashKey] = activeObjectPayload;
-                    }
-
-                    document.getElementById('userBalance').innerText = newBal.toFixed(2);
-                    renderCachedUserStateData();
-
-                    if (window.commitStateVerification) {
-                        window.commitStateVerification(userUid, uniqueTxHashKey, targetAmount, 'approve');
-                    }
-
-                    document.getElementById('fundAmount').value = '';
-                    const utrInputEl = document.getElementById('utrInput');
-                    if (utrInputEl) utrInputEl.value = '';
-                    activeDynamicPayAmount = null;
-                    window.generateSecureQR();
-
-                    window.showCustomToast(`⚡ Instant Verified! ₹${targetAmount.toFixed(2)} wallet me add ho gaye!`, "success");
-                    break;
-                } catch (e) {
-                    console.error("Instant listener credit error:", e);
-                }
-            }
-        }
-    });
-};
+document.getElementById('fundAmount').addEventListener('input', window.generateSecureQR);
 
 // Form Calculator & Service Select
 window.calculateRealtimeCost = function() {
@@ -757,150 +619,40 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// ⚡ 8-SECOND DELAY COOLDOWN & AUTO-VERIFY DEPOSIT HANDLER
-window.submitDepositToServer = async function() {
-    const rawVal = parseFloat(document.getElementById('fundAmount').value);
-    const utrInputEl = document.getElementById('utrInput');
-    const utrString = utrInputEl ? utrInputEl.value.trim() : ('AUTO_DECIMAL_' + Date.now());
-    const submitBtn = document.getElementById('submit-deposit-btn');
-
-    if (!rawVal || rawVal <= 0) { 
-        window.showCustomToast("Kripya valid Amount darj karein.", "error"); 
-        return; 
-    }
+// Deposit Handling
+window.submitDepositToServer = function() {
+    const value = parseFloat(document.getElementById('fundAmount').value);
+    const utrString = document.getElementById('utrInput').value.trim();
+    if (!value || value <= 0 || !utrString || utrString.length < 6) { window.showCustomToast("Validation report error. Verify inputs.", "error"); return; }
 
     if (!currentAuthenticatedUserToken) {
-        window.showCustomToast("Session error: Kripya dobara login karein.", "error");
+        window.showCustomToast("Session error: Please re-login.", "error");
         return;
     }
 
-    // DISABLE BUTTON FOR 8 SECONDS & SHOW CHECKING STATUS
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>⏳ Checking Payment (8s)...</span><i class="fa-solid fa-spinner animate-spin"></i>`;
-    }
+    const uniqueTxHashKey = 'tx_' + Date.now();
+    const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+    const activeObjectPayload = { 
+        structId: uniqueTxHashKey, 
+        uid: currentAuthenticatedUserToken.uid, 
+        email: userEmailStr, 
+        value: value, 
+        utr: utrString, 
+        internalState: 'Processing' 
+    };
 
-    const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
-    const startTime = Date.now();
-    let isAutoVerified = false;
-    let matchedPaymentKey = null;
-    const creditedAmount = activeDynamicPayAmount || rawVal;
-    const targetBaseInt = Math.floor(rawVal);
-
-    // 8-Second Polling Loop to check incoming notification matching title/body
-    while (Date.now() - startTime < 8000) {
-        try {
-            const paymentsSnap = await get(ref(database, 'payments'));
-            if (paymentsSnap.exists()) {
-                const allPayments = paymentsSnap.val();
-                for (let pKey in allPayments) {
-                    const p = allPayments[pKey];
-                    const fullText = `${p.title || ''} ${p.body || ''}`.toLowerCase();
-                    
-                    // Match title "Money received" or amount match
-                    const hasMatch = fullText.includes(creditedAmount.toString()) || 
-                                     fullText.includes(creditedAmount.toFixed(2)) || 
-                                     fullText.includes("money received") ||
-                                     (fullText.includes("received") && fullText.includes(targetBaseInt.toString()));
-
-                    if (hasMatch) {
-                        isAutoVerified = true;
-                        matchedPaymentKey = pKey;
-                        break;
-                    }
-                }
-            }
-            if (isAutoVerified) break;
-        } catch (e) {}
-        await sleep(1000);
-    }
-
-    try {
-        if (isAutoVerified) {
-            const uniqueTxHashKey = 'tx_' + Date.now();
-            const userUid = currentAuthenticatedUserToken.uid;
-            const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
-            const finalUtrRef = `DECIMAL_INR_${creditedAmount.toFixed(2)}_${uniqueTxHashKey.slice(-6)}`;
-
-            const activeObjectPayload = { 
-                structId: uniqueTxHashKey, 
-                uid: userUid, 
-                email: userEmailStr,
-                value: creditedAmount, 
-                utr: finalUtrRef, 
-                internalState: 'Verified',
-                verifiedAt: Date.now()
-            };
-
-            const userBalRef = ref(database, `users/${userUid}/walletBalance`);
-            const curBalSnap = await get(userBalRef);
-            const currentBal = curBalSnap.exists() ? parseFloat(curBalSnap.val() || 0) : 0;
-            const newBal = currentBal + creditedAmount;
-
-            await update(ref(database, `users/${userUid}`), { walletBalance: newBal });
-            await set(ref(database, `users/${userUid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
-            await set(ref(database, `used_utrs/${finalUtrRef}`), { uid: userUid, amount: creditedAmount, timestamp: Date.now() });
-
-            // 🗑️ DELETE IMMEDIATELY FROM FIREBASE
-            if (matchedPaymentKey) {
-                await set(ref(database, `payments/${matchedPaymentKey}`), null);
-            }
-
-            if (userDataRecordCached) {
-                userDataRecordCached.walletBalance = newBal;
-                if (!userDataRecordCached.transactions) userDataRecordCached.transactions = {};
-                userDataRecordCached.transactions[uniqueTxHashKey] = activeObjectPayload;
-            }
-
-            document.getElementById('userBalance').innerText = newBal.toFixed(2);
-            renderCachedUserStateData();
-
-            if (window.commitStateVerification) {
-                window.commitStateVerification(userUid, uniqueTxHashKey, creditedAmount, 'approve');
-            }
-
-            document.getElementById('fundAmount').value = '';
-            if (utrInputEl) utrInputEl.value = '';
-            activeDynamicPayAmount = null;
-            window.generateSecureQR();
-
-            window.showCustomToast(`⚡ Instant Verified! ₹${creditedAmount.toFixed(2)} wallet me add ho gaye!`, "success");
-        } else {
-            // Fallback manual queue if not caught in 8 seconds
-            const uniqueTxHashKey = 'tx_' + Date.now();
-            const userUid = currentAuthenticatedUserToken.uid;
-            const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
-            const finalUtrRef = `DECIMAL_INR_${creditedAmount.toFixed(2)}_${uniqueTxHashKey.slice(-6)}`;
-
-            const fallbackPayload = { 
-                structId: uniqueTxHashKey, 
-                uid: userUid, 
-                email: userEmailStr,
-                value: creditedAmount, 
-                utr: finalUtrRef, 
-                internalState: 'Processing' 
-            };
-
-            await set(ref(database, `users/${userUid}/transactions/${uniqueTxHashKey}`), fallbackPayload);
-            await set(ref(database, `global_deposits/${uniqueTxHashKey}`), fallbackPayload);
-
-            document.getElementById('fundAmount').value = '';
-            if (utrInputEl) utrInputEl.value = '';
-            activeDynamicPayAmount = null;
-            window.generateSecureQR();
-
-            window.showCustomToast("Clearance report generated! Awaiting admin audits verification.", "info");
-        }
-    } catch (err) {
-        window.showCustomToast("Error: " + err.message, "error");
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerHTML = `<span>Submit Clearance Report</span>`;
-        }
-    }
+    set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
+    set(ref(database, `global_deposits/${uniqueTxHashKey}`), activeObjectPayload).then(() => {
+        document.getElementById('fundAmount').value = '';
+        document.getElementById('utrInput').value = '';
+        window.generateSecureQR();
+        window.showCustomToast("SLA Clearance report generated! Awaiting audits verification.", "success");
+    }).catch((err) => {
+        window.showCustomToast("Deposit submission error: " + err.message, "error");
+    });
 };
 
+// ✅ UPDATED HYBRID CLIENT DISPATCHER (Direct & Vercel Proxy Safe)
 window.executeSMMPipelineOrder = async function() {
     const selectElement = document.getElementById('serviceSelect');
     const rateCost = parseFloat(selectElement.value);
@@ -927,6 +679,7 @@ window.executeSMMPipelineOrder = async function() {
     let initialStartCount = "15556";
     
     try {
+        // Try calling Vercel API Route first
         const res = await fetch("/api/order", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -952,6 +705,7 @@ window.executeSMMPipelineOrder = async function() {
             if (data.start_count) initialStartCount = data.start_count;
         }
     } catch (err) {
+        // Fallback for direct App/CORS execution if Vercel serverless proxy is unreached
         console.warn("Serverless route unreached, executing client-side fallback dispatch...");
         try {
             const fallbackKey = 'ad7b6ed8b9e332b2f4b9c4840e0fb7db';
@@ -1026,6 +780,7 @@ window.executeSMMPipelineOrder = async function() {
     }
 };
 
+// 🌟 UPDATED ADMIN USERS LIST (SHOWS EMAIL WITH UID & CLICKABLE VIEW DATA)
 window.renderAdminUsersList = function() {
     const stream = document.getElementById('adminUsersStream');
     if(!stream) return;
@@ -1089,6 +844,7 @@ window.renderAdminUsersList = function() {
     }
 };
 
+// 🌟 NEW FUNCTION: OPEN ADMIN USER DATA DEEP AUDIT MODAL
 window.viewAdminUserData = function(targetUid) {
     if (!window.allUsersCache || !window.allUsersCache[targetUid]) {
         if (window.showCustomToast) window.showCustomToast("User record not found in cache", "error");
@@ -1104,6 +860,7 @@ window.viewAdminUserData = function(targetUid) {
     document.getElementById('modalUserProvider').innerText = (u.provider === 'google' || u.provider === 'google.com') ? 'Google OAuth' : 'Email/Pass';
     document.getElementById('modalUserRefers').innerText = u.qualifiedReferCount || 0;
 
+    // Populate Orders Table inside Modal
     const ordersStream = document.getElementById('modalUserOrdersStream');
     if (!u.orders || Object.keys(u.orders).length === 0) {
         ordersStream.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 italic font-mono">No orders placed by this user yet.</td></tr>`;
@@ -1137,6 +894,7 @@ window.viewAdminUserData = function(targetUid) {
         ordersStream.innerHTML = orderRows;
     }
 
+    // Populate Transactions Table inside Modal
     const txStream = document.getElementById('modalUserTxStream');
     if (!u.transactions || Object.keys(u.transactions).length === 0) {
         txStream.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-500 italic font-mono">No deposits recorded.</td></tr>`;
@@ -1405,7 +1163,7 @@ window.getSmartAiResponse = function(q) {
     const query = q.toLowerCase();
     
     if (query.includes('deposit') || query.includes('add fund') || query.includes('utr') || query.includes('balance') || query.includes('pay') || query.includes('qr') || query.includes('money')) {
-        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your transaction. The system verifies and credits your balance instantly!";
+        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your 12-digit transaction UTR ID. The admin will verify and credit your balance shortly!";
     }
     if (query.includes('order') || query.includes('views') || query.includes('likes') || query.includes('followers') || query.includes('reels') || query.includes('subscribers') || query.includes('buy')) {
         return "You can place instant SMM orders on the 'Order' tab! Choose your platform (Instagram, YouTube, or Facebook), select a service package, paste your link, enter quantity, and click 'Dispatch SMM Pipeline'.";
