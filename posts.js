@@ -619,13 +619,13 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// ⚡ UPDATED INSTANT AUTO-VERIFY DEPOSIT HANDLER (PhonePe MacroDroid + Firebase Engine)
+// ⚡ SUPER-SMART AUTO-VERIFY DEPOSIT HANDLER (PhonePe Match Engine)
 window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
     const utrString = document.getElementById('utrInput').value.trim();
     const submitBtn = document.getElementById('submit-deposit-btn');
 
-    if (!value || value <= 0 || !utrString || utrString.length < 6) { 
+    if (!value || value <= 0 || !utrString || utrString.length < 4) { 
         window.showCustomToast("Validation report error. Verify inputs.", "error"); 
         return; 
     }
@@ -637,7 +637,7 @@ window.submitDepositToServer = async function() {
 
     if (submitBtn) {
         submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>VERIFYING PAYMENT...</span><i class="fa-solid fa-spinner animate-spin"></i>`;
+        submitBtn.innerHTML = `<span>⚡ AUTO-VERIFYING...</span><i class="fa-solid fa-spinner animate-spin"></i>`;
     }
 
     try {
@@ -655,15 +655,26 @@ window.submitDepositToServer = async function() {
 
         if (paymentsSnap.exists()) {
             const allPayments = paymentsSnap.val();
-            
+            const valInt = Math.floor(value);
+            const valFixed = value.toFixed(2);
+
             for (let pKey in allPayments) {
                 const p = allPayments[pKey];
                 const fullText = `${p.title || ''} ${p.body || ''}`.toLowerCase();
 
-                const hasUTR = fullText.includes(utrString.toLowerCase());
-                const hasAmount = fullText.includes(value.toString()) || fullText.includes(value.toFixed(2));
+                // Check 1: Direct UTR in text
+                const hasUTR = utrString.length >= 6 && fullText.includes(utrString.toLowerCase());
+                
+                // Check 2: Amount Match in notification (e.g. ₹10, 10.00, Rs 10, INR 10)
+                const hasAmount = fullText.includes(`₹${valInt}`) || 
+                                  fullText.includes(`₹ ${valInt}`) || 
+                                  fullText.includes(`rs ${valInt}`) || 
+                                  fullText.includes(`rs. ${valInt}`) || 
+                                  fullText.includes(valFixed) || 
+                                  fullText.includes(` ${valInt} `) ||
+                                  fullText.includes(value.toString());
 
-                if (hasUTR || (fullText.includes(utrString.slice(-6)) && hasAmount)) {
+                if (hasUTR || hasAmount) {
                     isAutoVerified = true;
                     matchedPaymentKey = pKey;
                     break;
@@ -746,7 +757,7 @@ window.submitDepositToServer = async function() {
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
-            submitBtn.innerHTML = `<span>Submit Transaction</span><i class="fa-solid fa-arrow-right"></i>`;
+            submitBtn.innerHTML = `<span>Submit Clearance Report</span>`;
         }
     }
 };
