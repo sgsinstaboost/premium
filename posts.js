@@ -455,8 +455,8 @@ window.generateSecureQR = function() {
             const upiId = "Q341013270@ybl";
             const cleanAmount = parseFloat(requestedAmount).toFixed(2);
             
-            // Standard NPCI Compliant Dynamic Intent URI with payee name Sachin Kumar
-            const upiUri = `upi://pay?pa=${upiId}&pn=Sachin%20Kumar&am=${cleanAmount}&cu=INR&tn=WalletTopup`;
+            // Standard NPCI Compliant Dynamic Intent URI with payee name Sgs Provider
+            const upiUri = `upi://pay?pa=${merchantUpiId}&pn=SGS%20Provider&am=${cleanAmount}&cu=INR&tn=SGS%20Wallet%20Topup`;
             targetImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(upiUri)}`;
 
             container.classList.remove('hidden'); 
