@@ -630,7 +630,7 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
 // Global Execution Debounce Lock to prevent duplicate calls on fast clicks
 let isDepositSubmitting = false;
 
-// Deposit Handling (Exact Instant Auto-Verification, Multi-Deposit Safe & Strict Fake Protection)
+// Deposit Handling (Exact Instant Auto-Verification, Anti-Duplicate & Anti-Fraud Protected)
 window.submitDepositToServer = async function() {
     if (isDepositSubmitting) return; // Prevent double-trigger completely
 
@@ -666,7 +666,6 @@ window.submitDepositToServer = async function() {
         
         let autoMatched = false;
         let matchedKey = null;
-        let isAlreadyClaimedPayment = false;
 
         try {
             const paymentsSnap = await Promise.race([fetchPaymentsPromise, timeoutPromise]);
@@ -674,47 +673,39 @@ window.submitDepositToServer = async function() {
                 const paymentsData = paymentsSnap.val();
                 const sortedKeys = Object.keys(paymentsData).reverse();
 
-                // Scan for payment notifications matching Amount & Name
+                // Scan for the most recent UNUSED payment matching Amount & Name
                 for (let key of sortedKeys) {
                     const item = paymentsData[key];
                     const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase().replace(/\s+/g, ' ');
                     const isUsed = item && item.used === true;
 
-                    const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
-                                     rawMsg.includes(`rs. ${numVal}`) || 
-                                     rawMsg.includes(`rs ${numVal}`) || 
-                                     rawMsg.includes(`rs.${floatVal}`) || 
-                                     rawMsg.includes(`rs ${floatVal}`) || 
-                                     rawMsg.includes(`₹${numVal}`) || 
-                                     rawMsg.includes(`₹${floatVal}`) ||
-                                     rawMsg.includes(`${numVal}`);
+                    if (!isUsed) {
+                        const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
+                                         rawMsg.includes(`rs. ${numVal}`) || 
+                                         rawMsg.includes(`rs ${numVal}`) || 
+                                         rawMsg.includes(`rs.${floatVal}`) || 
+                                         rawMsg.includes(`rs ${floatVal}`) || 
+                                         rawMsg.includes(`₹${numVal}`) || 
+                                         rawMsg.includes(`₹${floatVal}`) ||
+                                         rawMsg.includes(`${numVal}`);
 
-                    const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
-                    const hasName = rawMsg.includes(cleanNameInput) || 
-                                    (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
+                        const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
+                        const hasName = rawMsg.includes(cleanNameInput) || 
+                                        (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
 
-                    if (hasAmount && hasName) {
-                        if (!isUsed) {
+                        if (hasAmount && hasName) {
                             autoMatched = true;
                             matchedKey = key;
-                            break; // Fresh matching transaction found!
-                        } else {
-                            isAlreadyClaimedPayment = true;
+                            break;
                         }
                     }
                 }
             }
         } catch (fetchErr) {
-            console.warn("Auto-match scan deferred:", fetchErr);
+            console.warn("Auto-match scan deferred to audit fallback:", fetchErr);
         }
 
-        // 2. Alert user if this exact payment notification is already used/claimed
-        if (!autoMatched && isAlreadyClaimedPayment) {
-            window.showCustomToast("⚠️ This payment has already been claimed and added to wallet!", "error");
-            return;
-        }
-
-        // 3. Instant Auto-Verification Success Flow (Single balance credit only)
+        // 2. Instant Auto-Verification Success Flow (Single balance credit only)
         if (autoMatched && matchedKey) {
             const currentExactTime = Date.now();
 
@@ -783,37 +774,30 @@ window.submitDepositToServer = async function() {
             return;
         }
 
-        // 4. Strict Fake Filter: Agar koi matching record nahi mila (User ne bina pay kiye submit kiya)
-        // Toh ise Admin queue me mat bhejo, balki seedha user dashboard par CANCELLED/REJECTED mark karo
+        // 3. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
         const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
-        const rejectedObjectPayload = { 
+        const activeObjectPayload = { 
             structId: uniqueTxHashKey, 
             uid: currentAuthenticatedUserToken.uid, 
             email: userEmailStr, 
             value: value, 
             utr: identifierInput, 
-            internalState: 'Cancelled',
+            internalState: 'Processing',
             timestamp: Date.now()
         };
 
-        // Sirf user ke ledger me Cancelled dikhega (Admin panel me koi clutter nahi jayega)
-        await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), rejectedObjectPayload);
-
-        if (userDataRecordCached) {
-            if (!userDataRecordCached.transactions) userDataRecordCached.transactions = {};
-            userDataRecordCached.transactions[uniqueTxHashKey] = rejectedObjectPayload;
-            renderCachedUserStateData();
-        }
+        await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
+        await set(ref(database, `global_deposits/${uniqueTxHashKey}`), activeObjectPayload);
 
         document.getElementById('fundAmount').value = '';
         document.getElementById('utrInput').value = '';
         window.generateSecureQR();
-        window.showCustomToast("⚠️ Payment not found! Please scan QR code and pay first.", "error");
+        window.showCustomToast("Clearance report generated! Awaiting audits verification.", "success");
 
     } catch (err) {
         console.error("Deposit Processing Error:", err);
-        window.showCustomToast("Deposit error: " + err.message, "error");
+        window.showCustomToast("Deposit submission error: " + err.message, "error");
     } finally {
         isDepositSubmitting = false;
         if (submitBtn) {
@@ -1724,7 +1708,7 @@ window.showCustomToast = function(message, type = "info") {
     if (type === "success" || message.toLowerCase().includes("success") || message.toLowerCase().includes("verified")) {
         toast.style.borderLeftColor = "#10b981";
         icon = '<i class="fa-solid fa-circle-check text-emerald-400 animate-pulse"></i>';
-    } else if (type === "error" || message.toLowerCase().includes("fail") || message.toLowerCase().includes("error") || message.toLowerCase().includes("already") || message.toLowerCase().includes("not found") || message.toLowerCase().includes("deficit")) {
+    } else if (type === "error" || message.toLowerCase().includes("fail") || message.toLowerCase().includes("error") || message.toLowerCase().includes("already") || message.toLowerCase().includes("deficit")) {
         toast.style.borderLeftColor = "#f43f5e";
         icon = '<i class="fa-solid fa-triangle-exclamation text-rose-500 animate-bounce"></i>';
     }
