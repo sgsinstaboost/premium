@@ -317,9 +317,9 @@ onAuthStateChanged(auth, async (user) => {
             } else {
                 userDataRecordCached = { 
                     email: userEmail, 
-                    provider: providerTypeStr,
-                    createdAt: creationTimeStr,
-                    lastSignedIn: lastSignInTimeStr,
+                    provider: providerTypeStr, 
+                    createdAt: creationTimeStr, 
+                    lastSignedIn: lastSignInTimeStr, 
                     walletBalance: 0.00, 
                     transactions: {}, 
                     orders: {} 
@@ -460,7 +460,7 @@ window.generateSecureQR = function() {
             targetImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=200x200&margin=10&data=${encodeURIComponent(upiUri)}`;
             
             container.classList.remove('hidden'); 
-            prompt.classList.add('hidden');
+            prompt.classList.add('hidden'); 
             summary.innerText = `ENDPOINT METRIC SECURED: INT-₹${parseFloat(requestedAmount).toFixed(2)}`; 
             summary.classList.remove('hidden');
         } catch(qrErr) {
@@ -619,37 +619,142 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling
-window.submitDepositToServer = function() {
+// Deposit Handling (Upgraded with Instant PhonePe Real-time Auto-Verification + Admin Queue Fallback)
+window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
     const utrString = document.getElementById('utrInput').value.trim();
-    if (!value || value <= 0 || !utrString || utrString.length < 6) { window.showCustomToast("Validation report error. Verify inputs.", "error"); return; }
+    if (!value || value <= 0 || !utrString || utrString.length < 6) { 
+        window.showCustomToast("Validation report error. Verify inputs.", "error"); 
+        return; 
+    }
 
     if (!currentAuthenticatedUserToken) {
         window.showCustomToast("Session error: Please re-login.", "error");
         return;
     }
 
-    const uniqueTxHashKey = 'tx_' + Date.now();
-    const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
-    const activeObjectPayload = { 
-        structId: uniqueTxHashKey, 
-        uid: currentAuthenticatedUserToken.uid, 
-        email: userEmailStr, 
-        value: value, 
-        utr: utrString, 
-        internalState: 'Processing' 
-    };
+    const submitBtn = document.getElementById('submit-deposit-btn');
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>VERIFYING PAYMENT VIA GATEWAY...</span><i class="fa-solid fa-spinner animate-spin ml-2"></i>`;
+    }
 
-    set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
-    set(ref(database, `global_deposits/${uniqueTxHashKey}`), activeObjectPayload).then(() => {
+    try {
+        // 1. Check if UTR is already used to prevent duplicate exploitation
+        const usedUtrSnap = await get(ref(database, `used_utrs/${utrString}`));
+        if (usedUtrSnap.exists() && usedUtrSnap.val() === true) {
+            window.showCustomToast("This UTR has already been claimed and used!", "error");
+            if (submitBtn) {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = `Submit Clearance Report`;
+            }
+            return;
+        }
+
+        // 2. Fetch realtime PhonePe notifications from /payments
+        const paymentsSnap = await get(ref(database, 'payments'));
+        let autoMatched = false;
+        let matchedKey = null;
+
+        if (paymentsSnap.exists()) {
+            const paymentsData = paymentsSnap.val();
+            const formattedAmountStr = value.toString();
+
+            for (let key in paymentsData) {
+                const item = paymentsData[key];
+                const msg = String(item.message || item.raw_data || "");
+                const isAlreadyUsed = item.used === true;
+
+                if (!isAlreadyUsed) {
+                    const cleanMsg = msg.replace(/,/g, '');
+                    const hasUtr = cleanMsg.includes(utrString);
+                    const hasAmount = cleanMsg.includes(formattedAmountStr) || cleanMsg.includes(`₹${formattedAmountStr}`) || cleanMsg.includes(`Rs ${formattedAmountStr}`) || cleanMsg.includes(`INR ${formattedAmountStr}`);
+
+                    if (hasUtr || (cleanMsg.includes(utrString) && hasAmount)) {
+                        autoMatched = true;
+                        matchedKey = key;
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 3. Auto Instant Verification Success Flow
+        if (autoMatched) {
+            // Lock UTR globally and in payments node
+            await set(ref(database, `used_utrs/${utrString}`), true);
+            if (matchedKey) {
+                await update(ref(database, `payments/${matchedKey}`), { used: true, claimedBy: currentAuthenticatedUserToken.uid });
+            }
+
+            const uniqueTxHashKey = 'tx_' + Date.now();
+            const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+            const verifiedPayload = { 
+                structId: uniqueTxHashKey, 
+                uid: currentAuthenticatedUserToken.uid, 
+                email: userEmailStr, 
+                value: value, 
+                utr: utrString, 
+                internalState: 'Verified' 
+            };
+
+            // Add transaction log
+            await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), verifiedPayload);
+
+            // Update user live wallet balance instantly
+            const currentBal = parseFloat(userDataRecordCached ? userDataRecordCached.walletBalance || 0 : 0);
+            const updatedBal = currentBal + value;
+            await update(ref(database, 'users/' + currentAuthenticatedUserToken.uid), { walletBalance: updatedBal });
+
+            if (userDataRecordCached) {
+                userDataRecordCached.walletBalance = updatedBal;
+                if (!userDataRecordCached.transactions) userDataRecordCached.transactions = {};
+                userDataRecordCached.transactions[uniqueTxHashKey] = verifiedPayload;
+            }
+
+            document.getElementById('userBalance').innerText = updatedBal.toFixed(2);
+            renderCachedUserStateData();
+
+            // Check and trigger referral reward if applicable
+            window.commitStateVerification(currentAuthenticatedUserToken.uid, uniqueTxHashKey, value, 'approve');
+
+            document.getElementById('fundAmount').value = '';
+            document.getElementById('utrInput').value = '';
+            window.generateSecureQR();
+
+            window.showCustomToast(`🎉 INSTANT AUTO-VERIFIED! ₹${value.toFixed(2)} added to your wallet.`, "success");
+            return;
+        }
+
+        // 4. Fallback: If not instantly auto-matched, route to Admin Audit Queue safely
+        const uniqueTxHashKey = 'tx_' + Date.now();
+        const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+        const activeObjectPayload = { 
+            structId: uniqueTxHashKey, 
+            uid: currentAuthenticatedUserToken.uid, 
+            email: userEmailStr, 
+            value: value, 
+            utr: utrString, 
+            internalState: 'Processing' 
+        };
+
+        await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
+        await set(ref(database, `global_deposits/${uniqueTxHashKey}`), activeObjectPayload);
+
         document.getElementById('fundAmount').value = '';
         document.getElementById('utrInput').value = '';
         window.generateSecureQR();
-        window.showCustomToast("SLA Clearance report generated! Awaiting audits verification.", "success");
-    }).catch((err) => {
+        window.showCustomToast("SLA Clearance report generated! Awaiting audit verification.", "success");
+
+    } catch (err) {
+        console.error("Deposit Processing Error:", err);
         window.showCustomToast("Deposit submission error: " + err.message, "error");
-    });
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerHTML = `Submit Clearance Report`;
+        }
+    }
 };
 
 // ✅ UPDATED HYBRID CLIENT DISPATCHER (Direct & Vercel Proxy Safe)
@@ -736,14 +841,14 @@ window.executeSMMPipelineOrder = async function() {
     const cleanServiceName = selectedServiceName.split('—')[0].trim();
     const orderPayloadData = { 
         orderId: 'SGS-' + providerLiveOrderId, 
-        rawOrderId: providerLiveOrderId,
+        rawOrderId: providerLiveOrderId, 
         serviceName: cleanServiceName, 
         quantity: qty, 
         cost: realTimeComputedCost, 
-        link: link,
-        startCount: initialStartCount,
-        status: 'Pending',
-        timestamp: Date.now()
+        link: link, 
+        startCount: initialStartCount, 
+        status: 'Pending', 
+        timestamp: Date.now() 
     };
 
     const updatedUserBalancePostOrder = currentWalletBal - realTimeComputedCost;
@@ -1163,7 +1268,7 @@ window.getSmartAiResponse = function(q) {
     const query = q.toLowerCase();
     
     if (query.includes('deposit') || query.includes('add fund') || query.includes('utr') || query.includes('balance') || query.includes('pay') || query.includes('qr') || query.includes('money')) {
-        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your 12-digit transaction UTR ID. The admin will verify and credit your balance shortly!";
+        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your 12-digit transaction UTR ID. The system will instantly auto-verify and credit your balance!";
     }
     if (query.includes('order') || query.includes('views') || query.includes('likes') || query.includes('followers') || query.includes('reels') || query.includes('subscribers') || query.includes('buy')) {
         return "You can place instant SMM orders on the 'Order' tab! Choose your platform (Instagram, YouTube, or Facebook), select a service package, paste your link, enter quantity, and click 'Dispatch SMM Pipeline'.";
