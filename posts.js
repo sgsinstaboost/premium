@@ -619,12 +619,12 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling (Upgraded with Instant PhonePe Real-time Auto-Verification + Admin Queue Fallback)
+// Deposit Handling (Upgraded: Matches Sender Name OR UTR + Amount from PhonePe notification for Instant Auto-Credit)
 window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
-    const utrString = document.getElementById('utrInput').value.trim();
-    if (!value || value <= 0 || !utrString || utrString.length < 6) { 
-        window.showCustomToast("Validation report error. Verify inputs.", "error"); 
+    const identifierInput = document.getElementById('utrInput').value.trim();
+    if (!value || value <= 0 || !identifierInput || identifierInput.length < 3) { 
+        window.showCustomToast("Validation report error. Verify inputs (Amount & Name/UTR).", "error"); 
         return; 
     }
 
@@ -640,10 +640,13 @@ window.submitDepositToServer = async function() {
     }
 
     try {
-        // 1. Check if UTR is already used to prevent duplicate exploitation
-        const usedUtrSnap = await get(ref(database, `used_utrs/${utrString}`));
-        if (usedUtrSnap.exists() && usedUtrSnap.val() === true) {
-            window.showCustomToast("This UTR has already been claimed and used!", "error");
+        const cleanInputLower = identifierInput.toLowerCase();
+        const formattedAmountStr = value.toString();
+
+        // 1. Check if identifier/UTR was already claimed
+        const usedRefSnap = await get(ref(database, `used_utrs/${identifierInput}`));
+        if (usedRefSnap.exists() && usedRefSnap.val() === true) {
+            window.showCustomToast("This reference/UTR has already been claimed and used!", "error");
             if (submitBtn) {
                 submitBtn.disabled = false;
                 submitBtn.innerHTML = `Submit Clearance Report`;
@@ -651,26 +654,30 @@ window.submitDepositToServer = async function() {
             return;
         }
 
-        // 2. Fetch realtime PhonePe notifications from /payments
+        // 2. Fetch realtime PhonePe notifications from /payments node
         const paymentsSnap = await get(ref(database, 'payments'));
         let autoMatched = false;
         let matchedKey = null;
 
         if (paymentsSnap.exists()) {
             const paymentsData = paymentsSnap.val();
-            const formattedAmountStr = value.toString();
 
             for (let key in paymentsData) {
                 const item = paymentsData[key];
-                const msg = String(item.message || item.raw_data || "");
+                const rawMsg = String(item.message || item.raw_data || "").toLowerCase();
                 const isAlreadyUsed = item.used === true;
 
                 if (!isAlreadyUsed) {
-                    const cleanMsg = msg.replace(/,/g, '');
-                    const hasUtr = cleanMsg.includes(utrString);
-                    const hasAmount = cleanMsg.includes(formattedAmountStr) || cleanMsg.includes(`₹${formattedAmountStr}`) || cleanMsg.includes(`Rs ${formattedAmountStr}`) || cleanMsg.includes(`INR ${formattedAmountStr}`);
+                    const cleanMsg = rawMsg.replace(/,/g, '');
+                    const hasAmount = cleanMsg.includes(formattedAmountStr) || 
+                                     cleanMsg.includes(`₹${formattedAmountStr}`) || 
+                                     cleanMsg.includes(`rs ${formattedAmountStr}`) || 
+                                     cleanMsg.includes(`inr ${formattedAmountStr}`);
 
-                    if (hasUtr || (cleanMsg.includes(utrString) && hasAmount)) {
+                    const nameParts = cleanInputLower.split(' ').filter(p => p.length > 2);
+                    const hasNameOrUtr = cleanMsg.includes(cleanInputLower) || (nameParts.length > 0 && nameParts.some(part => cleanMsg.includes(part)));
+
+                    if (hasAmount && hasNameOrUtr) {
                         autoMatched = true;
                         matchedKey = key;
                         break;
@@ -679,12 +686,15 @@ window.submitDepositToServer = async function() {
             }
         }
 
-        // 3. Auto Instant Verification Success Flow
+        // 3. Instant Auto-Verification Success Flow
         if (autoMatched) {
-            // Lock UTR globally and in payments node
-            await set(ref(database, `used_utrs/${utrString}`), true);
+            await set(ref(database, `used_utrs/${identifierInput}`), true);
             if (matchedKey) {
-                await update(ref(database, `payments/${matchedKey}`), { used: true, claimedBy: currentAuthenticatedUserToken.uid });
+                await update(ref(database, `payments/${matchedKey}`), { 
+                    used: true, 
+                    claimedBy: currentAuthenticatedUserToken.uid,
+                    claimedAt: Date.now()
+                });
             }
 
             const uniqueTxHashKey = 'tx_' + Date.now();
@@ -694,14 +704,12 @@ window.submitDepositToServer = async function() {
                 uid: currentAuthenticatedUserToken.uid, 
                 email: userEmailStr, 
                 value: value, 
-                utr: utrString, 
+                utr: identifierInput, 
                 internalState: 'Verified' 
             };
 
-            // Add transaction log
             await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), verifiedPayload);
 
-            // Update user live wallet balance instantly
             const currentBal = parseFloat(userDataRecordCached ? userDataRecordCached.walletBalance || 0 : 0);
             const updatedBal = currentBal + value;
             await update(ref(database, 'users/' + currentAuthenticatedUserToken.uid), { walletBalance: updatedBal });
@@ -715,7 +723,6 @@ window.submitDepositToServer = async function() {
             document.getElementById('userBalance').innerText = updatedBal.toFixed(2);
             renderCachedUserStateData();
 
-            // Check and trigger referral reward if applicable
             window.commitStateVerification(currentAuthenticatedUserToken.uid, uniqueTxHashKey, value, 'approve');
 
             document.getElementById('fundAmount').value = '';
@@ -726,7 +733,7 @@ window.submitDepositToServer = async function() {
             return;
         }
 
-        // 4. Fallback: If not instantly auto-matched, route to Admin Audit Queue safely
+        // 4. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
         const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
         const activeObjectPayload = { 
@@ -734,7 +741,7 @@ window.submitDepositToServer = async function() {
             uid: currentAuthenticatedUserToken.uid, 
             email: userEmailStr, 
             value: value, 
-            utr: utrString, 
+            utr: identifierInput, 
             internalState: 'Processing' 
         };
 
@@ -1268,7 +1275,7 @@ window.getSmartAiResponse = function(q) {
     const query = q.toLowerCase();
     
     if (query.includes('deposit') || query.includes('add fund') || query.includes('utr') || query.includes('balance') || query.includes('pay') || query.includes('qr') || query.includes('money')) {
-        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your 12-digit transaction UTR ID. The system will instantly auto-verify and credit your balance!";
+        return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your Sender Name or 12-digit transaction UTR ID. The system will instantly auto-verify and credit your balance!";
     }
     if (query.includes('order') || query.includes('views') || query.includes('likes') || query.includes('followers') || query.includes('reels') || query.includes('subscribers') || query.includes('buy')) {
         return "You can place instant SMM orders on the 'Order' tab! Choose your platform (Instagram, YouTube, or Facebook), select a service package, paste your link, enter quantity, and click 'Dispatch SMM Pipeline'.";
