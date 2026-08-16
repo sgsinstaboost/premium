@@ -440,7 +440,7 @@ window.switchTab = function(targetId) {
     }
 };
 
-// Fixed Standard Valid UPI QR Code Generator
+// 100% Reliable Standard Dynamic UPI QR Code Generator for Sachin Kumar
 window.generateSecureQR = function() {
     const requestedAmount = document.getElementById('fundAmount').value;
     const container = document.getElementById('qrMatrixContainer');
@@ -453,8 +453,8 @@ window.generateSecureQR = function() {
             const upiId = "Q341013270@ybl";
             const cleanAmount = parseFloat(requestedAmount).toFixed(2);
             
-            // Standard Valid Clean UPI URI Format
-            const upiUri = `upi://pay?pa=${upiId}&pn=SGS_UPDATES&am=${cleanAmount}&cu=INR&tn=Wallet_Topup`;
+            // Standard NPCI Compliant Spec with exact Name & Amount
+            const upiUri = `upi://pay?pa=${upiId}&pn=Sachin%20Kumar&am=${cleanAmount}&cu=INR&tn=WalletTopup`;
             targetImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(upiUri)}`;
 
             container.classList.remove('hidden'); 
