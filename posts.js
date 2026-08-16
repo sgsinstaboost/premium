@@ -455,7 +455,7 @@ window.generateSecureQR = function() {
             const upiId = "Q341013270@ybl";
             const cleanAmount = parseFloat(requestedAmount).toFixed(2);
             
-            // Standard NPCI Compliant Dynamic Intent URI
+            // Standard NPCI Compliant Dynamic Intent URI with payee name Sachin Kumar
             const upiUri = `upi://pay?pa=${upiId}&pn=Sachin%20Kumar&am=${cleanAmount}&cu=INR&tn=WalletTopup`;
             targetImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(upiUri)}`;
 
@@ -475,7 +475,7 @@ window.generateSecureQR = function() {
 
 document.getElementById('fundAmount').addEventListener('input', window.generateSecureQR);
 
-// Auto-convert name input to UPPERCASE automatically as the user types
+// Auto-convert name input to UPPERCASE automatically as the user types (bina kisi issue ke)
 const utrInputEl = document.getElementById('utrInput');
 if (utrInputEl) {
     utrInputEl.addEventListener('input', function() {
@@ -609,7 +609,7 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
             statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status}</span>`;
         }
         
-        const dateStr = o.timestamp ? new Date(o.timestamp).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '2026-07-25 13:44:20';
+        const dateStr = o.timestamp ? new Date(o.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '2026-07-25 13:44:20';
         const cleanLink = o.link || 'https://www.instagram.com/reel/...';
         const pureOrderId = o.rawOrderId || (o.orderId ? o.orderId.replace('SGS-', '') : '2022244');
 
@@ -627,7 +627,7 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling (Exact Instant Auto-Verification & Anti-Fraud Matching)
+// Deposit Handling (Exact Instant Auto-Verification, Multi-Deposit Safe & Anti-Fraud Protected)
 window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
     const identifierInput = document.getElementById('utrInput').value.trim().toUpperCase();
@@ -649,7 +649,7 @@ window.submitDepositToServer = async function() {
     }
 
     try {
-        // Space-normalized and lowercase for robust matching
+        // Space-normalized & clean lowercase name for 100% reliable matching
         const cleanNameInput = identifierInput.toLowerCase().replace(/\s+/g, ' ').trim();
         const numVal = parseInt(value, 10);
         const floatVal = parseFloat(value).toFixed(2);
@@ -667,6 +667,7 @@ window.submitDepositToServer = async function() {
                 const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase().replace(/\s+/g, ' ');
                 const isAlreadyUsed = item && item.used === true;
 
+                // Only check fresh, unused payment entries
                 if (!isAlreadyUsed) {
                     // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
                     const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
@@ -678,7 +679,7 @@ window.submitDepositToServer = async function() {
                                      rawMsg.includes(`₹${floatVal}`) ||
                                      rawMsg.includes(`${numVal}`);
 
-                    // Match Name: Full name match or single parts match
+                    // Match Name: Full match or word tokens match
                     const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
                     const hasName = rawMsg.includes(cleanNameInput) || 
                                     (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
@@ -694,7 +695,7 @@ window.submitDepositToServer = async function() {
 
         // 2. Instant Auto-Verification Success Flow
         if (autoMatched) {
-            // Lock this specific payment notification entry so it cannot be claimed twice
+            // Lock only this exact payment entry so it can never be claimed again
             if (matchedKey) {
                 await update(ref(database, `payments/${matchedKey}`), { 
                     used: true, 
@@ -1096,20 +1097,40 @@ window.updateUserBalancePrompt = function(targetUid, currentBal, email) {
 window.switchAdminTab = function(tabName) {
     const depSec = document.getElementById('adminDepositsSection');
     const usrSec = document.getElementById('adminUsersSection');
+    const noticeSec = document.getElementById('adminNoticeSection');
     const depBtn = document.getElementById('admin-tab-deposits-btn');
     const usrBtn = document.getElementById('admin-tab-users-btn');
+    const noticeBtn = document.getElementById('admin-tab-notice-btn');
 
     if (tabName === 'deposits') {
         if (depSec) depSec.classList.remove('hidden');
         if (usrSec) usrSec.classList.add('hidden');
+        if (noticeSec) noticeSec.classList.add('hidden');
         if (depBtn) depBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
         if (usrBtn) usrBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
-    } else {
+        if (noticeBtn) noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+    } else if (tabName === 'users') {
         if (depSec) depSec.classList.add('hidden');
         if (usrSec) usrSec.classList.remove('hidden');
+        if (noticeSec) noticeSec.classList.add('hidden');
         if (usrBtn) usrBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
         if (depBtn) depBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+        if (noticeBtn) noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
         window.renderAdminUsersList();
+    } else if (tabName === 'notice') {
+        if (depSec) depSec.classList.add('hidden');
+        if (usrSec) usrSec.classList.add('hidden');
+        if (noticeSec) {
+            noticeSec.classList.remove('hidden');
+            get(ref(database, 'system_notice/content')).then((snap) => {
+                if (snap.exists() && document.getElementById('adminNoticeInput')) {
+                    document.getElementById('adminNoticeInput').value = snap.val();
+                }
+            });
+        }
+        if (noticeBtn) noticeBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
+        if (depBtn) depBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+        if (usrBtn) usrBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
     }
 };
 
@@ -2282,12 +2303,26 @@ window.switchAdminTab = function(tabName) {
     const depSec = document.getElementById('adminDepositsSection');
     const usrSec = document.getElementById('adminUsersSection');
     const noticeSec = document.getElementById('adminNoticeSection');
-    
     const depBtn = document.getElementById('admin-tab-deposits-btn');
     const usrBtn = document.getElementById('admin-tab-users-btn');
     const noticeBtn = document.getElementById('admin-tab-notice-btn');
 
-    if (tabName === 'notice') {
+    if (tabName === 'deposits') {
+        if (depSec) depSec.classList.remove('hidden');
+        if (usrSec) usrSec.classList.add('hidden');
+        if (noticeSec) noticeSec.classList.add('hidden');
+        if (depBtn) depBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
+        if (usrBtn) usrBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+        if (noticeBtn) noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+    } else if (tabName === 'users') {
+        if (depSec) depSec.classList.add('hidden');
+        if (usrSec) usrSec.classList.remove('hidden');
+        if (noticeSec) noticeSec.classList.add('hidden');
+        if (usrBtn) usrBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
+        if (depBtn) depBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+        if (noticeBtn) noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
+        window.renderAdminUsersList();
+    } else if (tabName === 'notice') {
         if (depSec) depSec.classList.add('hidden');
         if (usrSec) usrSec.classList.add('hidden');
         if (noticeSec) {
@@ -2301,9 +2336,6 @@ window.switchAdminTab = function(tabName) {
         if (noticeBtn) noticeBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
         if (depBtn) depBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
         if (usrBtn) usrBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
-    } else if (noticeBtn && tabName !== 'notice') {
-        if (noticeSec) noticeSec.classList.add('hidden');
-        noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
     }
 };
 
