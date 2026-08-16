@@ -473,6 +473,14 @@ window.generateSecureQR = function() {
 
 document.getElementById('fundAmount').addEventListener('input', window.generateSecureQR);
 
+// Auto-convert name input to UPPERCASE automatically as the user types
+const utrInputEl = document.getElementById('utrInput');
+if (utrInputEl) {
+    utrInputEl.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+}
+
 // Form Calculator & Service Select
 window.calculateRealtimeCost = function() {
     const selectElement = document.getElementById('serviceSelect');
@@ -617,10 +625,11 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling (Upgraded: Matches Sender Name OR UTR + Amount from PhonePe notification for Instant Auto-Credit)
+// Deposit Handling (Exact Instant Auto-Verification for PhonePe Notification: "Rs.X from NAME")
 window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
-    const identifierInput = document.getElementById('utrInput').value.trim();
+    const identifierInput = document.getElementById('utrInput').value.trim().toUpperCase();
+    
     if (!value || value <= 0 || !identifierInput || identifierInput.length < 2) { 
         window.showCustomToast("Validation report error. Verify inputs (Amount & Sender Name).", "error"); 
         return; 
@@ -638,8 +647,9 @@ window.submitDepositToServer = async function() {
     }
 
     try {
-        const cleanInputLower = identifierInput.toLowerCase();
-        const formattedAmountStr = value.toString();
+        const cleanNameInput = identifierInput.toLowerCase().trim();
+        const numVal = parseInt(value, 10);
+        const floatVal = parseFloat(value).toFixed(2);
 
         // 1. Check if identifier/UTR was already claimed
         const usedRefSnap = await get(ref(database, `used_utrs/${identifierInput}`));
@@ -662,20 +672,26 @@ window.submitDepositToServer = async function() {
 
             for (let key in paymentsData) {
                 const item = paymentsData[key];
-                const rawMsg = String(item.message || item.raw_data || "").toLowerCase();
-                const isAlreadyUsed = item.used === true;
+                const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase();
+                const isAlreadyUsed = item && item.used === true;
 
                 if (!isAlreadyUsed) {
-                    const cleanMsg = rawMsg.replace(/,/g, '');
-                    const hasAmount = cleanMsg.includes(formattedAmountStr) || 
-                                     cleanMsg.includes(`₹${formattedAmountStr}`) || 
-                                     cleanMsg.includes(`rs ${formattedAmountStr}`) || 
-                                     cleanMsg.includes(`inr ${formattedAmountStr}`);
+                    // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
+                    const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
+                                     rawMsg.includes(`rs. ${numVal}`) || 
+                                     rawMsg.includes(`rs ${numVal}`) || 
+                                     rawMsg.includes(`rs.${floatVal}`) || 
+                                     rawMsg.includes(`rs ${floatVal}`) || 
+                                     rawMsg.includes(`₹${numVal}`) || 
+                                     rawMsg.includes(`₹${floatVal}`) ||
+                                     rawMsg.includes(`${numVal}`);
 
-                    const nameParts = cleanInputLower.split(' ').filter(p => p.length >= 2);
-                    const hasNameOrUtr = cleanMsg.includes(cleanInputLower) || (nameParts.length > 0 && nameParts.some(part => cleanMsg.includes(part)));
+                    // Match Name: Full match ya first/last name parts
+                    const nameParts = cleanNameInput.split(/\s+/).filter(p => p.length >= 2);
+                    const hasName = rawMsg.includes(cleanNameInput) || 
+                                    (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
 
-                    if (hasAmount && hasNameOrUtr) {
+                    if (hasAmount && hasName) {
                         autoMatched = true;
                         matchedKey = key;
                         break;
