@@ -515,12 +515,12 @@
                                     </div>
                                 </div>
                                 <div>
-                                    <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">B. 12-Digit Transaction Reference (UTR ID)</label>
+                                    <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">B. Sender Name / PhonePe UPI Name (or 12-Digit UTR)</label>
                                     <div class="relative">
-                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-fingerprint text-sm"></i></span>
-                                        <input type="text" id="utrInput" placeholder="Ex: 340912xxxxxx" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-mono transition">
+                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-user text-sm"></i></span>
+                                        <input type="text" id="utrInput" placeholder="Ex: Rahul Kumar ya 12-digit UTR ID" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-semibold transition">
                                     </div>
-                                    <p class="text-[9px] text-slate-500 font-mono mt-2 leading-relaxed">Please submit the official 12-digit transaction UTR ID issued by your banking application to automatically clear balance verification.</p>
+                                    <p class="text-[9px] text-slate-500 font-mono mt-2 leading-relaxed">Apne PhonePe/Bank account me likha Sender Name ya 12-digit UTR ID enter karein instant auto-verify ke liye.</p>
                                 </div>
 
                                 <button id="submit-deposit-btn" class="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold uppercase tracking-widest text-xs rounded-2xl shadow-glow-emerald transition active:scale-[0.98]">
@@ -555,7 +555,7 @@
                                 <thead>
                                     <tr class="text-slate-400 border-b border-slate-850 text-[10px] font-mono uppercase bg-[#0d1220]/40">
                                         <th class="p-3">Value</th>
-                                        <th class="p-3">UTR Reference</th>
+                                        <th class="p-3">Sender / UTR Ref</th>
                                         <th class="p-3">Status</th>
                                     </tr>
                                 </thead>
@@ -689,7 +689,7 @@
                             </thead>
                             <tbody id="adminPipelineStream" class="text-xs font-mono divide-y divide-slate-800/60">
                                 <tr>
-                                    <td colspan="5" class="p-12 text-center text-slate-600 italic">No clearance pipeline metrics captured inside system database.</td>
+                                    <td colspan="5" class="p-12 text-center text-slate-600 italic font-mono">No clearance pipeline metrics captured inside system database.</td>
                                 </tr>
                             </tbody>
                         </table>
