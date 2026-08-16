@@ -200,7 +200,7 @@ const serviceRepository = {
         { name: "13482 - ❤️ 👀 YouTube Views [Low Drop][Lifetime Guaranteed][2-3K/Day][Instant] ⚡ — ₹85.68 per 1000", cost: 85.68 },
         { name: "13483 - ❤️ 👀 YouTube Views [No Drop][Lifetime Guaranteed][5-10K/Day][0-1/Hour Start] ⚡ — ₹113.84 per 1000", cost: 113.84 },
         { name: "13484 - ❤️ 👀 YouTube Views [No Drop][Lifetime Guaranteed][5-10K/Day][Instant] ⚡ — ₹141.90 per 1000", cost: 141.90 }
-       ],
+     ],
     youtube_like: [
         { name: "14340 - ❤️ 💍 Youtube Likes (No Drop)(30 Days Refill ♻️)(1K/H ⚡)— ₹27.77 per 1000", cost: 27.77 },
         { name: "14341 - ❤️ 💍 Youtube Likes (No Drop)(30 Days Refill ♻️)(5K/H ⚡)— ₹52.25 per 1000", cost: 52.25 },
@@ -473,6 +473,14 @@ window.generateSecureQR = function() {
 
 document.getElementById('fundAmount').addEventListener('input', window.generateSecureQR);
 
+// Auto-convert name input to UPPERCASE automatically as the user types
+const utrInputEl = document.getElementById('utrInput');
+if (utrInputEl) {
+    utrInputEl.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+}
+
 // Form Calculator & Service Select
 window.calculateRealtimeCost = function() {
     const selectElement = document.getElementById('serviceSelect');
@@ -617,7 +625,7 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling (Exact Instant Auto-Verification for PhonePe Notification: "Rs.X from NAME")
+// Deposit Handling (Exact Instant Auto-Verification - Multi-Deposit Safe)
 window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
     const identifierInput = document.getElementById('utrInput').value.trim().toUpperCase();
@@ -643,18 +651,7 @@ window.submitDepositToServer = async function() {
         const numVal = parseInt(value, 10);
         const floatVal = parseFloat(value).toFixed(2);
 
-        // 1. Check if identifier/UTR was already claimed
-        const usedRefSnap = await get(ref(database, `used_utrs/${identifierInput}`));
-        if (usedRefSnap.exists() && usedRefSnap.val() === true) {
-            window.showCustomToast("This payment has already been claimed and used!", "error");
-            if (submitBtn) {
-                submitBtn.disabled = false;
-                submitBtn.innerHTML = `Submit Payments`;
-            }
-            return;
-        }
-
-        // 2. Fetch realtime PhonePe notifications from /payments node
+        // 1. Fetch realtime PhonePe notifications from /payments node
         const paymentsSnap = await get(ref(database, 'payments'));
         let autoMatched = false;
         let matchedKey = null;
@@ -667,8 +664,9 @@ window.submitDepositToServer = async function() {
                 const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase();
                 const isAlreadyUsed = item && item.used === true;
 
+                // Sirf wahi notification check karo jo abhi tak use nahi hua hai
                 if (!isAlreadyUsed) {
-                    // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
+                    // Match Amount Formats: Rs.5, Rs. 5, ₹5, 5.00, etc.
                     const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
                                      rawMsg.includes(`rs. ${numVal}`) || 
                                      rawMsg.includes(`rs ${numVal}`) || 
@@ -678,10 +676,10 @@ window.submitDepositToServer = async function() {
                                      rawMsg.includes(`₹${floatVal}`) ||
                                      rawMsg.includes(`${numVal}`);
 
-                    // Match Name: Full match ya first/last name parts
+                    // Match Name: Full match ya parts
                     const nameParts = cleanNameInput.split(/\s+/).filter(p => p.length >= 2);
                     const hasName = rawMsg.includes(cleanNameInput) || 
-                                   (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
+                                    (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
 
                     if (hasAmount && hasName) {
                         autoMatched = true;
@@ -692,9 +690,9 @@ window.submitDepositToServer = async function() {
             }
         }
 
-        // 3. Instant Auto-Verification Success Flow
+        // 2. Instant Auto-Verification Success Flow
         if (autoMatched) {
-            await set(ref(database, `used_utrs/${identifierInput}`), true);
+            // Lock this specific payment notification entry so it cannot be reused
             if (matchedKey) {
                 await update(ref(database, `payments/${matchedKey}`), { 
                     used: true, 
@@ -739,7 +737,7 @@ window.submitDepositToServer = async function() {
             return;
         }
 
-        // 4. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
+        // 3. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
         const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
         const activeObjectPayload = { 
@@ -769,7 +767,6 @@ window.submitDepositToServer = async function() {
         }
     }
 };
-
 // ✅ UPDATED HYBRID CLIENT DISPATCHER (Direct & Vercel Proxy Safe)
 window.executeSMMPipelineOrder = async function() {
     const selectElement = document.getElementById('serviceSelect');
@@ -895,6 +892,70 @@ window.executeSMMPipelineOrder = async function() {
     } finally {
         submitBtn.disabled = false;
         submitBtn.innerHTML = `<span>DISPATCH SMM PIPELINE</span><i class="fa-solid fa-paper-plane animate-pulse"></i>`;
+    }
+};
+
+// 🌟 UPDATED ADMIN USERS LIST (SHOWS EMAIL WITH UID & CLICKABLE VIEW DATA)
+window.renderAdminUsersList = function() {
+    const stream = document.getElementById('adminUsersStream');
+    if(!stream) return;
+    if(!window.allUsersCache || typeof window.allUsersCache !== 'object' || Object.keys(window.allUsersCache).length === 0) {
+        stream.innerHTML = `<tr><td colspan="6" class="p-12 text-center text-slate-500 italic font-mono">No users registered in database.</td></tr>`;
+        return;
+    }
+
+    const searchEl = document.getElementById('adminUserSearchInput');
+    const searchTerm = searchEl ? searchEl.value.trim().toLowerCase() : '';
+    let htmlRows = '';
+    let count = 0;
+
+    Object.keys(window.allUsersCache).forEach(uid => {
+        const u = window.allUsersCache[uid];
+        if (!u || typeof u !== 'object') return;
+
+        const email = u.email || `User (${uid.substring(0, 8)})`;
+        const userUidVal = u.userUid || '----';
+
+        if (searchTerm && !email.toLowerCase().includes(searchTerm) && !userUidVal.toLowerCase().includes(searchTerm)) {
+            return;
+        }
+        count++;
+
+        const liveBal = u.walletBalance !== undefined ? parseFloat(u.walletBalance).toFixed(2) : "0.00";
+        const safeEmail = window.escapeHtml(email);
+        const providerIcon = (u.provider === 'google' || u.provider === 'google.com') 
+            ? `<i class="fa-brands fa-google text-rose-500 text-sm" title="Google Provider"></i>` 
+            : `<i class="fa-solid fa-envelope text-sky-400 text-sm" title="Email Provider"></i>`;
+        const createdAtStr = window.escapeHtml(u.createdAt || '24 Jul 2026');
+        const lastSignedInStr = window.escapeHtml(u.lastSignedIn || '24 Jul 2026');
+
+        htmlRows += `
+            <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800 font-mono text-xs">
+                <td class="p-3 sm:p-4">
+                    <div class="flex flex-col">
+                        <span class="text-slate-200 font-bold truncate max-w-[200px]" title="${safeEmail}">${safeEmail}</span>
+                        <span onclick="window.viewAdminUserData('${uid}')" class="text-[10px] text-amber-400 font-extrabold cursor-pointer hover:underline flex items-center space-x-1 mt-0.5" title="Click to view full user activity & orders">
+                            <i class="fa-solid fa-id-badge text-[9px]"></i>
+                            <span>UID: #${userUidVal}</span>
+                        </span>
+                    </div>
+                </td>
+                <td class="p-3 sm:p-4 text-center">${providerIcon}</td>
+                <td class="p-3 sm:p-4 text-slate-400">${createdAtStr}</td>
+                <td class="p-3 sm:p-4 text-slate-400">${lastSignedInStr}</td>
+                <td class="p-3 sm:p-4 font-bold text-emerald-400 font-mono">₹${liveBal}</td>
+                <td class="p-3 sm:p-4 text-right space-x-1.5">
+                    <button onclick="window.viewAdminUserData('${uid}')" class="bg-amber-600/80 hover:bg-amber-500 border border-amber-500/40 text-slate-950 font-black px-2.5 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95"><i class="fa-solid fa-eye mr-1"></i>View Data</button>
+                    <button onclick="window.updateUserBalancePrompt('${uid}', '${liveBal}', '${safeEmail}')" class="bg-purple-600/80 hover:bg-purple-500 border border-purple-500/40 text-white font-bold px-2.5 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95">Adjust Bal</button>
+                    <button onclick="window.triggerDeleteUserModal('${uid}', '${safeEmail}')" class="bg-rose-600/80 hover:bg-rose-500 border border-rose-500/40 text-white font-bold px-2.5 py-1.5 rounded-xl text-[9px] uppercase tracking-wider transition active:scale-95"><i class="fa-solid fa-trash-can mr-1"></i>Remove</button>
+                </td>
+            </tr>`;
+    });
+
+    if (count === 0) {
+        stream.innerHTML = `<tr><td colspan="6" class="p-8 text-center text-slate-500 italic font-mono">No matching user records found.</td></tr>`;
+    } else {
+        stream.innerHTML = htmlRows;
     }
 };
 
@@ -1825,7 +1886,7 @@ window.showReferChallengeTerms = function() {
                 <div class="bg-amber-500/10 border-l-4 border-amber-500 p-3 rounded text-amber-200 font-medium">
                     अपने वॉलेट में सीधे ₹5 का बोनस पाने के लिए इन शर्तों का पालन करें:
                 </div>
-                <ul class="list-decimal pl-5 space-y-2.5 text-slate-300 font-sans text-[11px]">
+                <ul class="list-decimal pl-5 space-y-2 text-slate-300 font-sans text-[11px]">
                     <li><strong>अकाउंट रजिस्ट्रेशन:</strong> आपके सभी 5 दोस्तों को आपके रेफरल कोड या लिंक का उपयोग करके नया अकाउंट बनाना होगा।</li>
                     <li><strong>न्यूनतम डिपॉज़िट:</strong> प्रत्येक दोस्त को अपने वॉलेट में कम से कम <strong>₹10.00 या उससे अधिक</strong> जोड़ना होगा और एडमिन द्वारा वेरिफाई होना होगा।</li>
                     <li><strong>लाइव प्रोग्रेस:</strong> जैसे ही आपका रेफर किया गया दोस्त ₹10+ का डिपॉज़िट पूरा करेगा, आपकी प्रोग्रेस बार अपडेट हो जाएगी (जैसे 1/5, 2/5)।</li>
