@@ -627,8 +627,13 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling (Exact Instant Auto-Verification, Multi-Deposit Safe & Anti-Fraud Protected with Timeout Fallback)
+// Global Execution Debounce Lock to prevent duplicate calls on fast clicks
+let isDepositSubmitting = false;
+
+// Deposit Handling (Exact Instant Auto-Verification, Anti-Duplicate & Anti-Fraud Protected)
 window.submitDepositToServer = async function() {
+    if (isDepositSubmitting) return; // Prevent double-trigger completely
+
     const value = parseFloat(document.getElementById('fundAmount').value);
     const rawIdentifier = document.getElementById('utrInput').value;
     const identifierInput = rawIdentifier.replace(/\s+/g, ' ').trim().toUpperCase();
@@ -643,6 +648,7 @@ window.submitDepositToServer = async function() {
         return;
     }
 
+    isDepositSubmitting = true;
     const submitBtn = document.getElementById('submit-deposit-btn');
     if (submitBtn) {
         submitBtn.disabled = true;
@@ -654,44 +660,50 @@ window.submitDepositToServer = async function() {
         const numVal = parseInt(value, 10);
         const floatVal = parseFloat(value).toFixed(2);
 
-        // 1. Fetch realtime PhonePe notifications from /payments node with 3s Timeout protection
+        // 1. Fetch realtime PhonePe notifications from /payments node with 3.5s Timeout protection
         const fetchPaymentsPromise = get(ref(database, 'payments'));
-        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3500));
         
         let autoMatched = false;
         let matchedKey = null;
+        let isAlreadyClaimedPayment = false;
 
         try {
             const paymentsSnap = await Promise.race([fetchPaymentsPromise, timeoutPromise]);
             if (paymentsSnap && paymentsSnap.exists()) {
                 const paymentsData = paymentsSnap.val();
 
-                for (let key in paymentsData) {
+                // Sort keys in reverse order so latest notifications are matched first
+                const sortedKeys = Object.keys(paymentsData).reverse();
+
+                for (let key of sortedKeys) {
                     const item = paymentsData[key];
                     const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase().replace(/\s+/g, ' ');
-                    const isAlreadyUsed = item && item.used === true;
+                    const isUsed = item && item.used === true;
 
-                    // Only check fresh, unused payment entries
-                    if (!isAlreadyUsed) {
-                        // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
-                        const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
-                                         rawMsg.includes(`rs. ${numVal}`) || 
-                                         rawMsg.includes(`rs ${numVal}`) || 
-                                         rawMsg.includes(`rs.${floatVal}`) || 
-                                         rawMsg.includes(`rs ${floatVal}`) || 
-                                         rawMsg.includes(`₹${numVal}`) || 
-                                         rawMsg.includes(`₹${floatVal}`) ||
-                                         rawMsg.includes(`${numVal}`);
+                    // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
+                    const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
+                                     rawMsg.includes(`rs. ${numVal}`) || 
+                                     rawMsg.includes(`rs ${numVal}`) || 
+                                     rawMsg.includes(`rs.${floatVal}`) || 
+                                     rawMsg.includes(`rs ${floatVal}`) || 
+                                     rawMsg.includes(`₹${numVal}`) || 
+                                     rawMsg.includes(`₹${floatVal}`) ||
+                                     rawMsg.includes(`${numVal}`);
 
-                        // Match Name: Full match or word tokens match
-                        const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
-                        const hasName = rawMsg.includes(cleanNameInput) || 
-                                        (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
+                    // Match Name: Full match or word tokens match
+                    const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
+                    const hasName = rawMsg.includes(cleanNameInput) || 
+                                    (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
 
-                        if (hasAmount && hasName) {
+                    if (hasAmount && hasName) {
+                        if (!isUsed) {
                             autoMatched = true;
                             matchedKey = key;
-                            break;
+                            break; // Fresh matching transaction found!
+                        } else {
+                            // Match exists but was already claimed by this or another user
+                            isAlreadyClaimedPayment = true;
                         }
                     }
                 }
@@ -700,16 +712,20 @@ window.submitDepositToServer = async function() {
             console.warn("Auto-match scan deferred to audit fallback:", fetchErr);
         }
 
-        // 2. Instant Auto-Verification Success Flow (Single balance credit only)
-        if (autoMatched) {
+        // 2. Alert user if this exact payment notification is already used/claimed
+        if (!autoMatched && isAlreadyClaimedPayment) {
+            window.showCustomToast("⚠️ This payment has already been claimed and added to wallet!", "error");
+            return;
+        }
+
+        // 3. Instant Auto-Verification Success Flow (Single balance credit only)
+        if (autoMatched && matchedKey) {
             // Lock only this exact payment entry so it can never be claimed again
-            if (matchedKey) {
-                await update(ref(database, `payments/${matchedKey}`), { 
-                    used: true, 
-                    claimedBy: currentAuthenticatedUserToken.uid,
-                    claimedAt: Date.now()
-                }).catch(() => {});
-            }
+            await update(ref(database, `payments/${matchedKey}`), { 
+                used: true, 
+                claimedBy: currentAuthenticatedUserToken.uid,
+                claimedAt: Date.now()
+            }).catch(() => {});
 
             const uniqueTxHashKey = 'tx_' + Date.now();
             const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
@@ -768,7 +784,7 @@ window.submitDepositToServer = async function() {
             return;
         }
 
-        // 3. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
+        // 4. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
         const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
         const activeObjectPayload = { 
@@ -792,6 +808,7 @@ window.submitDepositToServer = async function() {
         console.error("Deposit Processing Error:", err);
         window.showCustomToast("Deposit submission error: " + err.message, "error");
     } finally {
+        isDepositSubmitting = false;
         if (submitBtn) {
             submitBtn.disabled = false;
             submitBtn.innerHTML = `Submit Payments`;
@@ -1697,10 +1714,10 @@ window.showCustomToast = function(message, type = "info") {
     toast.className = "glass-panel p-4 rounded-2xl shadow-lg border-l-4 border-rose-500 text-xs font-mono text-slate-200 flex items-center justify-between gap-3 animate-fade-in transition duration-300 relative overflow-hidden";
     
     let icon = '<i class="fa-solid fa-circle-info text-rose-400"></i>';
-    if (type === "success" || message.toLowerCase().includes("success")) {
+    if (type === "success" || message.toLowerCase().includes("success") || message.toLowerCase().includes("verified")) {
         toast.style.borderLeftColor = "#10b981";
         icon = '<i class="fa-solid fa-circle-check text-emerald-400 animate-pulse"></i>';
-    } else if (type === "error" || message.toLowerCase().includes("fail") || message.toLowerCase().includes("error") || message.toLowerCase().includes("deficit")) {
+    } else if (type === "error" || message.toLowerCase().includes("fail") || message.toLowerCase().includes("error") || message.toLowerCase().includes("already") || message.toLowerCase().includes("deficit")) {
         toast.style.borderLeftColor = "#f43f5e";
         icon = '<i class="fa-solid fa-triangle-exclamation text-rose-500 animate-bounce"></i>';
     }
