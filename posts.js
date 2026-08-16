@@ -666,44 +666,37 @@ window.submitDepositToServer = async function() {
         
         let autoMatched = false;
         let matchedKey = null;
-        let isAlreadyClaimedPayment = false;
 
         try {
             const paymentsSnap = await Promise.race([fetchPaymentsPromise, timeoutPromise]);
             if (paymentsSnap && paymentsSnap.exists()) {
                 const paymentsData = paymentsSnap.val();
-
-                // Sort keys in reverse order so latest notifications are matched first
                 const sortedKeys = Object.keys(paymentsData).reverse();
 
+                // Scan for the most recent UNUSED payment matching Amount & Name
                 for (let key of sortedKeys) {
                     const item = paymentsData[key];
                     const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase().replace(/\s+/g, ' ');
                     const isUsed = item && item.used === true;
 
-                    // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
-                    const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
-                                     rawMsg.includes(`rs. ${numVal}`) || 
-                                     rawMsg.includes(`rs ${numVal}`) || 
-                                     rawMsg.includes(`rs.${floatVal}`) || 
-                                     rawMsg.includes(`rs ${floatVal}`) || 
-                                     rawMsg.includes(`₹${numVal}`) || 
-                                     rawMsg.includes(`₹${floatVal}`) ||
-                                     rawMsg.includes(`${numVal}`);
+                    if (!isUsed) {
+                        const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
+                                         rawMsg.includes(`rs. ${numVal}`) || 
+                                         rawMsg.includes(`rs ${numVal}`) || 
+                                         rawMsg.includes(`rs.${floatVal}`) || 
+                                         rawMsg.includes(`rs ${floatVal}`) || 
+                                         rawMsg.includes(`₹${numVal}`) || 
+                                         rawMsg.includes(`₹${floatVal}`) ||
+                                         rawMsg.includes(`${numVal}`);
 
-                    // Match Name: Full match or word tokens match
-                    const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
-                    const hasName = rawMsg.includes(cleanNameInput) || 
-                                    (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
+                        const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
+                        const hasName = rawMsg.includes(cleanNameInput) || 
+                                        (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
 
-                    if (hasAmount && hasName) {
-                        if (!isUsed) {
+                        if (hasAmount && hasName) {
                             autoMatched = true;
                             matchedKey = key;
-                            break; // Fresh matching transaction found!
-                        } else {
-                            // Match exists but was already claimed by this or another user
-                            isAlreadyClaimedPayment = true;
+                            break;
                         }
                     }
                 }
@@ -712,22 +705,18 @@ window.submitDepositToServer = async function() {
             console.warn("Auto-match scan deferred to audit fallback:", fetchErr);
         }
 
-        // 2. Alert user if this exact payment notification is already used/claimed
-        if (!autoMatched && isAlreadyClaimedPayment) {
-            window.showCustomToast("⚠️ This payment has already been claimed and added to wallet!", "error");
-            return;
-        }
-
-        // 3. Instant Auto-Verification Success Flow (Single balance credit only)
+        // 2. Instant Auto-Verification Success Flow (Single balance credit only)
         if (autoMatched && matchedKey) {
-            // Lock only this exact payment entry so it can never be claimed again
+            const currentExactTime = Date.now();
+
+            // Lock this exact payment entry so it can never be claimed again
             await update(ref(database, `payments/${matchedKey}`), { 
                 used: true, 
                 claimedBy: currentAuthenticatedUserToken.uid,
-                claimedAt: Date.now()
+                claimedAt: currentExactTime
             }).catch(() => {});
 
-            const uniqueTxHashKey = 'tx_' + Date.now();
+            const uniqueTxHashKey = 'tx_' + currentExactTime;
             const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
             const verifiedPayload = { 
                 structId: uniqueTxHashKey, 
@@ -735,7 +724,8 @@ window.submitDepositToServer = async function() {
                 email: userEmailStr, 
                 value: value, 
                 utr: identifierInput, 
-                internalState: 'Verified' 
+                internalState: 'Verified',
+                timestamp: currentExactTime
             };
 
             await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), verifiedPayload);
@@ -784,7 +774,7 @@ window.submitDepositToServer = async function() {
             return;
         }
 
-        // 4. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
+        // 3. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
         const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
         const activeObjectPayload = { 
@@ -793,7 +783,8 @@ window.submitDepositToServer = async function() {
             email: userEmailStr, 
             value: value, 
             utr: identifierInput, 
-            internalState: 'Processing' 
+            internalState: 'Processing',
+            timestamp: Date.now()
         };
 
         await set(ref(database, `users/${currentAuthenticatedUserToken.uid}/transactions/${uniqueTxHashKey}`), activeObjectPayload);
