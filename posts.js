@@ -625,7 +625,9 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling (Exact Instant Auto-Verification - Multi-Deposit Safe)
+ne wpaymewnt 
+
+// Deposit Handling (Fixed: Multi-payment support & Exact Notification Match)
 window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
     const identifierInput = document.getElementById('utrInput').value.trim().toUpperCase();
@@ -651,7 +653,7 @@ window.submitDepositToServer = async function() {
         const numVal = parseInt(value, 10);
         const floatVal = parseFloat(value).toFixed(2);
 
-        // 1. Fetch realtime PhonePe notifications from /payments node
+        // Fetch realtime PhonePe notifications
         const paymentsSnap = await get(ref(database, 'payments'));
         let autoMatched = false;
         let matchedKey = null;
@@ -664,9 +666,7 @@ window.submitDepositToServer = async function() {
                 const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase();
                 const isAlreadyUsed = item && item.used === true;
 
-                // Sirf wahi notification check karo jo abhi tak use nahi hua hai
                 if (!isAlreadyUsed) {
-                    // Match Amount Formats: Rs.5, Rs. 5, ₹5, 5.00, etc.
                     const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
                                      rawMsg.includes(`rs. ${numVal}`) || 
                                      rawMsg.includes(`rs ${numVal}`) || 
@@ -676,7 +676,6 @@ window.submitDepositToServer = async function() {
                                      rawMsg.includes(`₹${floatVal}`) ||
                                      rawMsg.includes(`${numVal}`);
 
-                    // Match Name: Full match ya parts
                     const nameParts = cleanNameInput.split(/\s+/).filter(p => p.length >= 2);
                     const hasName = rawMsg.includes(cleanNameInput) || 
                                     (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
@@ -690,9 +689,8 @@ window.submitDepositToServer = async function() {
             }
         }
 
-        // 2. Instant Auto-Verification Success Flow
         if (autoMatched) {
-            // Lock this specific payment notification entry so it cannot be reused
+            // Lock only this unique notification key
             if (matchedKey) {
                 await update(ref(database, `payments/${matchedKey}`), { 
                     used: true, 
@@ -702,11 +700,10 @@ window.submitDepositToServer = async function() {
             }
 
             const uniqueTxHashKey = 'tx_' + Date.now();
-            const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
             const verifiedPayload = { 
                 structId: uniqueTxHashKey, 
                 uid: currentAuthenticatedUserToken.uid, 
-                email: userEmailStr, 
+                email: currentAuthenticatedUserToken.email || 'Registered User', 
                 value: value, 
                 utr: identifierInput, 
                 internalState: 'Verified' 
@@ -733,17 +730,16 @@ window.submitDepositToServer = async function() {
             document.getElementById('utrInput').value = '';
             window.generateSecureQR();
 
-            window.showCustomToast(`🎉 INSTANT AUTO-VERIFIED! ₹${value.toFixed(2)} added to your wallet.`, "success");
+            window.showCustomToast(`🎉 INSTANT AUTO-VERIFIED! ₹${value.toFixed(2)} added.`, "success");
             return;
         }
 
-        // 3. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
+        // Fallback to Admin Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
-        const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
         const activeObjectPayload = { 
             structId: uniqueTxHashKey, 
             uid: currentAuthenticatedUserToken.uid, 
-            email: userEmailStr, 
+            email: currentAuthenticatedUserToken.email || 'Registered User', 
             value: value, 
             utr: identifierInput, 
             internalState: 'Processing' 
@@ -755,11 +751,11 @@ window.submitDepositToServer = async function() {
         document.getElementById('fundAmount').value = '';
         document.getElementById('utrInput').value = '';
         window.generateSecureQR();
-        window.showCustomToast("Clearance report generated! Awaiting audit verification.", "success");
+        window.showCustomToast("Report generated! Awaiting audit verification.", "success");
 
     } catch (err) {
-        console.error("Deposit Processing Error:", err);
-        window.showCustomToast("Deposit submission error: " + err.message, "error");
+        console.error("Deposit Error:", err);
+        window.showCustomToast("Error: " + err.message, "error");
     } finally {
         if (submitBtn) {
             submitBtn.disabled = false;
@@ -767,6 +763,15 @@ window.submitDepositToServer = async function() {
         }
     }
 };
+
+// Auto-convert name input to UPPERCASE
+const utrInputEl = document.getElementById('utrInput');
+if (utrInputEl) {
+    utrInputEl.addEventListener('input', function() {
+        this.value = this.value.toUpperCase();
+    });
+}
+
 // ✅ UPDATED HYBRID CLIENT DISPATCHER (Direct & Vercel Proxy Safe)
 window.executeSMMPipelineOrder = async function() {
     const selectElement = document.getElementById('serviceSelect');
