@@ -250,7 +250,7 @@ const serviceRepository = {
         { name: "14344 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(No Refill ⚠️) — ₹30.49 per 1000", cost: 30.49 },
         { name: "14345 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(30 Days ♻️) — ₹38.25 per 1000", cost: 38.25 },
         { name: "14346 - 0👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(60 Days ♻️) — ₹43.42 per 1000", cost: 43.42 },
-        { name: "14347 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(50K/D ⚡)(90 Days ♻️) — ₹48.60 per 1000", cost: 48.60 },
+        { name: "14347 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(90 Days ♻️) — ₹48.60 per 1000", cost: 48.60 },
         { name: "14348 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(365 Days ♻️) — ₹53.78 per 1000", cost: 53.78 },
         { name: "14349 - 👥 ❤️ Facebook Followers (HQ+Real 👤)(Low Drop 💧)(Lifetime ♻️) — ₹58.95 per 1000", cost: 58.95 }
     ]
@@ -475,7 +475,7 @@ window.generateSecureQR = function() {
 
 document.getElementById('fundAmount').addEventListener('input', window.generateSecureQR);
 
-// Auto-convert name input to UPPERCASE automatically as the user types (bina kisi issue ke)
+// Auto-convert name input to UPPERCASE automatically as the user types
 const utrInputEl = document.getElementById('utrInput');
 if (utrInputEl) {
     utrInputEl.addEventListener('input', function() {
@@ -609,7 +609,7 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
             statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status}</span>`;
         }
         
-        const dateStr = o.timestamp ? new Date(o.timestamp).toLocaleString('en-GB', { day: '2-digit', month: 'digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '2026-07-25 13:44:20';
+        const dateStr = o.timestamp ? new Date(o.timestamp).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '2026-07-25 13:44:20';
         const cleanLink = o.link || 'https://www.instagram.com/reel/...';
         const pureOrderId = o.rawOrderId || (o.orderId ? o.orderId.replace('SGS-', '') : '2022244');
 
@@ -627,10 +627,11 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Deposit Handling (Exact Instant Auto-Verification, Multi-Deposit Safe & Anti-Fraud Protected)
+// Deposit Handling (Exact Instant Auto-Verification, Multi-Deposit Safe & Anti-Fraud Protected with Timeout Fallback)
 window.submitDepositToServer = async function() {
     const value = parseFloat(document.getElementById('fundAmount').value);
-    const identifierInput = document.getElementById('utrInput').value.trim().toUpperCase();
+    const rawIdentifier = document.getElementById('utrInput').value;
+    const identifierInput = rawIdentifier.replace(/\s+/g, ' ').trim().toUpperCase();
     
     if (!value || value <= 0 || !identifierInput || identifierInput.length < 2) { 
         window.showCustomToast("Validation report error. Verify inputs (Amount & Sender Name).", "error"); 
@@ -649,51 +650,57 @@ window.submitDepositToServer = async function() {
     }
 
     try {
-        // Space-normalized & clean lowercase name for 100% reliable matching
-        const cleanNameInput = identifierInput.toLowerCase().replace(/\s+/g, ' ').trim();
+        const cleanNameInput = identifierInput.toLowerCase();
         const numVal = parseInt(value, 10);
         const floatVal = parseFloat(value).toFixed(2);
 
-        // 1. Fetch realtime PhonePe notifications from /payments node
-        const paymentsSnap = await get(ref(database, 'payments'));
+        // 1. Fetch realtime PhonePe notifications from /payments node with 3s Timeout protection
+        const fetchPaymentsPromise = get(ref(database, 'payments'));
+        const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3000));
+        
         let autoMatched = false;
         let matchedKey = null;
 
-        if (paymentsSnap.exists()) {
-            const paymentsData = paymentsSnap.val();
+        try {
+            const paymentsSnap = await Promise.race([fetchPaymentsPromise, timeoutPromise]);
+            if (paymentsSnap && paymentsSnap.exists()) {
+                const paymentsData = paymentsSnap.val();
 
-            for (let key in paymentsData) {
-                const item = paymentsData[key];
-                const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase().replace(/\s+/g, ' ');
-                const isAlreadyUsed = item && item.used === true;
+                for (let key in paymentsData) {
+                    const item = paymentsData[key];
+                    const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase().replace(/\s+/g, ' ');
+                    const isAlreadyUsed = item && item.used === true;
 
-                // Only check fresh, unused payment entries
-                if (!isAlreadyUsed) {
-                    // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
-                    const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
-                                     rawMsg.includes(`rs. ${numVal}`) || 
-                                     rawMsg.includes(`rs ${numVal}`) || 
-                                     rawMsg.includes(`rs.${floatVal}`) || 
-                                     rawMsg.includes(`rs ${floatVal}`) || 
-                                     rawMsg.includes(`₹${numVal}`) || 
-                                     rawMsg.includes(`₹${floatVal}`) ||
-                                     rawMsg.includes(`${numVal}`);
+                    // Only check fresh, unused payment entries
+                    if (!isAlreadyUsed) {
+                        // Match Amount Formats: Rs.2, Rs. 2, ₹2, 2.00, Rs2
+                        const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
+                                         rawMsg.includes(`rs. ${numVal}`) || 
+                                         rawMsg.includes(`rs ${numVal}`) || 
+                                         rawMsg.includes(`rs.${floatVal}`) || 
+                                         rawMsg.includes(`rs ${floatVal}`) || 
+                                         rawMsg.includes(`₹${numVal}`) || 
+                                         rawMsg.includes(`₹${floatVal}`) ||
+                                         rawMsg.includes(`${numVal}`);
 
-                    // Match Name: Full match or word tokens match
-                    const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
-                    const hasName = rawMsg.includes(cleanNameInput) || 
-                                    (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
+                        // Match Name: Full match or word tokens match
+                        const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
+                        const hasName = rawMsg.includes(cleanNameInput) || 
+                                        (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
 
-                    if (hasAmount && hasName) {
-                        autoMatched = true;
-                        matchedKey = key;
-                        break;
+                        if (hasAmount && hasName) {
+                            autoMatched = true;
+                            matchedKey = key;
+                            break;
+                        }
                     }
                 }
             }
+        } catch (fetchErr) {
+            console.warn("Auto-match scan deferred to audit fallback:", fetchErr);
         }
 
-        // 2. Instant Auto-Verification Success Flow
+        // 2. Instant Auto-Verification Success Flow (Single balance credit only)
         if (autoMatched) {
             // Lock only this exact payment entry so it can never be claimed again
             if (matchedKey) {
@@ -701,7 +708,7 @@ window.submitDepositToServer = async function() {
                     used: true, 
                     claimedBy: currentAuthenticatedUserToken.uid,
                     claimedAt: Date.now()
-                });
+                }).catch(() => {});
             }
 
             const uniqueTxHashKey = 'tx_' + Date.now();
@@ -730,7 +737,28 @@ window.submitDepositToServer = async function() {
             document.getElementById('userBalance').innerText = updatedBal.toFixed(2);
             renderCachedUserStateData();
 
-            window.commitStateVerification(currentAuthenticatedUserToken.uid, uniqueTxHashKey, value, 'approve');
+            // Check referral reward eligibility without double-crediting deposit
+            if (parseFloat(value) >= 10.00) {
+                const targetUserRef = ref(database, `users/${currentAuthenticatedUserToken.uid}`);
+                get(targetUserRef).then((snap) => {
+                    if (snap.exists()) {
+                        const uData = snap.val();
+                        if (uData.referredBy && !uData.countedForReferChallenge) {
+                            const referrerUid = uData.referredBy;
+                            const referrerRef = ref(database, `users/${referrerUid}`);
+
+                            get(referrerRef).then((rSnap) => {
+                                if (rSnap.exists()) {
+                                    const rData = rSnap.val();
+                                    const currentCount = rData.qualifiedReferCount || 0;
+                                    update(referrerRef, { qualifiedReferCount: currentCount + 1 });
+                                    update(targetUserRef, { countedForReferChallenge: true });
+                                }
+                            });
+                        }
+                    }
+                }).catch(() => {});
+            }
 
             document.getElementById('fundAmount').value = '';
             document.getElementById('utrInput').value = '';
