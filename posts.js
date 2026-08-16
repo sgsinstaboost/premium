@@ -442,7 +442,7 @@ window.switchTab = function(targetId) {
     }
 };
 
-// 100% Reliable Standard Dynamic UPI QR Code Generator for Sachin Kumar
+/// 100% Reliable Standard Dynamic UPI QR Code Generator for Sgs Provider
 window.generateSecureQR = function() {
     const requestedAmount = document.getElementById('fundAmount').value;
     const container = document.getElementById('qrMatrixContainer');
@@ -456,7 +456,7 @@ window.generateSecureQR = function() {
             const cleanAmount = parseFloat(requestedAmount).toFixed(2);
             
             // Standard NPCI Compliant Dynamic Intent URI with payee name Sgs Provider
-            const upiUri = `upi://pay?pa=${merchantUpiId}&pn=SGS%20Provider&am=${cleanAmount}&cu=INR&tn=SGS%20Wallet%20Topup`;
+            const upiUri = `upi://pay?pa=${upiId}&pn=Sgs%20Provider&am=${cleanAmount}&cu=INR&tn=WalletTopup`;
             targetImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(upiUri)}`;
 
             container.classList.remove('hidden'); 
