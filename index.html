@@ -5,14 +5,14 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
     <title>SGS Premium SMM Engine - Enterprise Hub</title>
-    
+
     <!-- Tailwind CSS Integration -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Iconographies -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <!-- Premium Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
-    
+
     <script>
         tailwind.config = {
             darkMode: 'class',
@@ -106,805 +106,1057 @@
 </head>
 <body class="text-[#f1f5f9] font-sans min-h-screen flex flex-col antialiased selection:bg-rose-500 selection:text-white pb-24 lg:pb-0">
 
-    <!-- Global Fullscreen Data Loading Overlay -->
-    <div id="globalLoadingScreen" class="fixed inset-0 bg-[#030712] z-[9999] flex flex-col items-center justify-center transition-opacity duration-300">
-        <div class="relative flex items-center justify-center">
-            <div class="w-16 h-16 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin"></div>
-            <i class="fa-solid fa-bolt text-rose-500 text-xl absolute animate-pulse"></i>
-        </div>
-        <p class="mt-4 text-xs font-mono text-slate-400 uppercase tracking-widest animate-pulse">Synchronizing Node Data...</p>
+<!-- Global Fullscreen Data Loading Overlay -->
+<div id="globalLoadingScreen" class="fixed inset-0 bg-[#030712] z-[9999] flex flex-col items-center justify-center transition-opacity duration-300">
+    <div class="relative flex items-center justify-center">
+        <div class="w-16 h-16 border-4 border-rose-500/20 border-t-rose-500 rounded-full animate-spin"></div>
+        <i class="fa-solid fa-bolt text-rose-500 text-xl absolute animate-pulse"></i>
     </div>
+    <p class="mt-4 text-xs font-mono text-slate-400 uppercase tracking-widest animate-pulse">Synchronizing Node Data...</p>
+</div>
 
-    <!-- Ambient Glow Effects -->
-    <div class="fixed -top-40 -left-40 w-80 h-80 bg-rose-600/10 rounded-full blur-[100px] pointer-events-none z-0 animate-pulse-slow"></div>
-    <div class="fixed top-1/2 -right-40 w-80 h-80 bg-amber-600/10 rounded-full blur-[100px] pointer-events-none z-0 animate-pulse-slow" style="animation-delay: 2s;"></div>
+<!-- Ambient Glow Effects -->
+<div class="fixed -top-40 -left-40 w-80 h-80 bg-rose-600/10 rounded-full blur-[100px] pointer-events-none z-0 animate-pulse-slow"></div>
+<div class="fixed top-1/2 -right-40 w-80 h-80 bg-amber-600/10 rounded-full blur-[100px] pointer-events-none z-0 animate-pulse-slow" style="animation-delay: 2s;"></div>
 
-    <!-- Top Level Realtime Banner -->
-    <div id="topSuccessBanner" class="hidden bg-emerald-950/95 backdrop-blur-md text-emerald-300 font-medium text-xs sm:text-sm px-6 py-4 text-center sticky top-0 z-50 shadow-glow-emerald border-b border-emerald-500/30 flex items-center justify-center space-x-3 transition-all duration-300">
+<!-- Top Level Realtime Banner -->
+<div id="topSuccessBanner" class="hidden bg-emerald-950/95 backdrop-blur-md text-emerald-300 font-medium text-xs sm:text-sm px-6 py-4 text-center sticky top-0 z-50 shadow-glow-emerald border-b border-emerald-500/30 flex items-center justify-center space-x-3 transition-all duration-300">
         <span class="flex h-2.5 w-2.5 relative">
             <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
             <span class="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-500"></span>
         </span>
-        <i class="fa-solid fa-circle-check text-emerald-400 animate-pulse"></i>
-        <span id="bannerNotificationText" class="font-mono">Pipeline Transmitting Logs...</span>
-    </div>
+    <i class="fa-solid fa-circle-check text-emerald-400 animate-pulse"></i>
+    <span id="bannerNotificationText" class="font-mono">Pipeline Transmitting Logs...</span>
+</div>
 
-    <!-- Toast Notifications Container -->
-    <div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto sm:right-6 z-50 flex flex-col gap-2 max-w-sm"></div>
+<!-- Toast Notifications Container -->
+<div id="toastContainer" class="fixed top-4 right-4 left-4 sm:left-auto sm:right-6 z-50 flex flex-col gap-2 max-w-sm"></div>
 
-    <div id="authContainer" class="fixed inset-0 bg-[#030712] z-50 flex items-center justify-center p-4 overflow-y-auto">
-        <div class="glass-panel p-6 sm:p-8 rounded-[32px] w-full max-w-md shadow-2xl relative overflow-hidden transition-all duration-300">
-            <div class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500"></div>
-            
-            <div class="text-center mb-6">
-                <div class="inline-flex items-center space-x-2 bg-rose-500/10 border border-rose-500/20 px-3.5 py-1.5 rounded-full text-[10px] text-rose-400 font-bold tracking-widest mb-3 uppercase">
-                    <i class="fa-solid fa-shield-halved animate-pulse"></i>
-                    <span>Secure Node Handshake</span>
+<div id="authContainer" class="fixed inset-0 bg-[#030712] z-50 flex items-center justify-center p-4 overflow-y-auto">
+    <div class="glass-panel p-6 sm:p-8 rounded-[32px] w-full max-w-md shadow-2xl relative overflow-hidden transition-all duration-300">
+        <div class="absolute top-0 left-0 right-0 h-[3px] bg-gradient-to-r from-amber-500 via-rose-500 to-amber-500"></div>
+
+        <div class="text-center mb-6">
+            <div class="inline-flex items-center space-x-2 bg-rose-500/10 border border-rose-500/20 px-3.5 py-1.5 rounded-full text-[10px] text-rose-400 font-bold tracking-widest mb-3 uppercase">
+                <i class="fa-solid fa-shield-halved animate-pulse"></i>
+                <span>Secure Node Handshake</span>
+            </div>
+            <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white mb-1.5">
+                <span class="vip-gradient-text">SGS INSTABOOST</span>
+            </h1>
+            <p id="authSubTitle" class="text-[9px] text-slate-400 font-mono tracking-wider uppercase">Live Database Identity Validation Gateway</p>
+        </div>
+
+        <!-- Login Form view -->
+        <div id="loginForm" class="space-y-4">
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Mobile Number</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-phone text-sm"></i></span>
+                    <input type="tel" id="loginMobile" placeholder="Enter 10-digit mobile number" maxlength="10" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500 font-mono">
                 </div>
-                <h1 class="text-2xl sm:text-3xl font-black tracking-tight text-white mb-1.5">
-                    <span class="vip-gradient-text">SGS INSTABOOST</span>
-                </h1>
-                <p id="authSubTitle" class="text-[9px] text-slate-400 font-mono tracking-wider uppercase">Live Database Identity Validation Gateway</p>
             </div>
 
-            <!-- Login Form view -->
-            <div id="loginForm" class="space-y-4">
-                <button id="google-login-btn" type="button" class="hidden w-full py-3.5 bg-[#0d1220]/90 hover:bg-slate-900 border border-slate-800 text-slate-200 font-bold text-xs rounded-2xl flex items-center justify-center space-x-3 transition active:scale-[0.98] shadow-md">
-                    <i class="fa-brands fa-google text-rose-500 text-base"></i>
-                    <span>Continue with Google</span>
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Passphrase</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-lock text-sm"></i></span>
+                    <input type="password" id="loginPass" placeholder="••••••••" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+
+            <div class="flex items-center justify-between pt-1">
+                <div class="flex items-center">
+                    <input id="remember-me" type="checkbox" checked class="h-4 w-4 rounded border-slate-800 bg-[#0d1220] text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900">
+                    <label for="remember-me" class="ml-2 block text-xs text-slate-400">Keep safe profile cached</label>
+                </div>
+                <span id="trigger-forgot-btn" class="text-xs text-slate-400 hover:text-rose-400 cursor-pointer transition font-medium">Reset Credentials?</span>
+            </div>
+
+            <div class="pt-2">
+                <button id="login-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98]">
+                    Establish Secure Session
                 </button>
-
-                <div class="relative flex py-1 items-center hidden">
-                    <div class="flex-grow border-t border-slate-800"></div>
-                    <span class="flex-shrink mx-3 text-[9px] uppercase font-mono text-slate-500">Or Access With Email</span>
-                    <div class="flex-grow border-t border-slate-800"></div>
-                </div>
-
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Access Email Identity</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-envelope text-sm"></i></span>
-                        <input type="email" id="loginEmail" placeholder="name@domain.com" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Passphrase</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-lock text-sm"></i></span>
-                        <input type="password" id="loginPass" placeholder="••••••••" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
-                    </div>
-                </div>
-                
-                <div class="flex items-center justify-between pt-1">
-                    <div class="flex items-center">
-                        <input id="remember-me" type="checkbox" checked class="h-4 w-4 rounded border-slate-800 bg-[#0d1220] text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900">
-                        <label for="remember-me" class="ml-2 block text-xs text-slate-400">Keep safe profile cached</label>
-                    </div>
-                    <span id="trigger-forgot-btn" class="text-xs text-slate-400 hover:text-rose-400 cursor-pointer transition font-medium">Reset Credentials?</span>
-                </div>
-
-                <div class="pt-2">
-                    <button id="login-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98]">
-                        Establish Secure Session
-                    </button>
-                </div>
-
-                <p class="text-xs text-center text-slate-400 mt-4">Unregistered Node? <span id="trigger-signup-btn" class="text-rose-400 font-bold cursor-pointer hover:underline">Create New Account</span></p>
-
-                <!-- Footer Legal Policy Links on Login Page -->
-                <div class="mt-4 pt-3 border-t border-slate-800/40 flex items-center justify-center space-x-4 text-[10px] text-slate-500 font-mono">
-                    <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-privacy-login">Privacy Policy</span>
-                    <span>•</span>
-                    <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-terms-login">Terms of Agreement</span>
-                </div>
             </div>
 
-            <!-- Signup Form view -->
-            <div id="signupForm" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Provide Target Email</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-at text-sm"></i></span>
-                        <input type="email" id="registerEmail" placeholder="Enter registration email" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Configure Secure Password</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-key text-sm"></i></span>
-                        <input type="password" id="registerPass" placeholder="Min 6 characters required" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
-                    </div>
-                </div>
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Referral Code (Optional)</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-ticket text-sm"></i></span>
-                        <input type="text" id="registerRefCode" placeholder="Ex: SGS-8A3B2C" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-mono uppercase transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
-                    </div>
-                </div>
+            <p class="text-xs text-center text-slate-400 mt-4">Unregistered Node? <span id="trigger-signup-btn" class="text-rose-400 font-bold cursor-pointer hover:underline">Create New Account</span></p>
 
-                <div class="text-[11px] text-slate-400 leading-relaxed bg-[#0d1220]/85 p-3 rounded-xl border border-slate-850 flex items-start space-x-2">
-                    <input type="checkbox" id="agree-terms" checked class="mt-0.5 rounded bg-slate-900 border-slate-850 text-rose-500 focus:ring-rose-500">
-                    <label for="agree-terms">I authorize the secure <span class="text-rose-400 cursor-pointer underline" id="btn-show-privacy">Privacy Mandate</span> and <span class="text-rose-400 cursor-pointer underline" id="btn-show-terms">Terms of Agreement</span>.</label>
-                </div>
-
-                <button id="register-submit-btn" type="button" class="w-full py-3.5 bg-gradient-to-r from-amber-600 via-rose-600 to-amber-600 hover:from-amber-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98]">
-                    Verify & Create Session Token
-                </button>
-                <p class="text-xs text-center text-slate-400">Already registered? <span id="trigger-login-btn" class="text-amber-400 font-bold cursor-pointer hover:underline">Access Terminal</span></p>
-            </div>
-
-            <!-- Forgot Password Form view -->
-            <div id="forgotForm" class="space-y-4 hidden">
-                <div>
-                    <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Recovery Target Email</label>
-                    <div class="relative">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-paper-plane text-sm"></i></span>
-                        <input type="email" id="forgotEmail" placeholder="Enter registered email address" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
-                    </div>
-                </div>
-                <button id="reset-submit-btn" class="w-full py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-widest rounded-2xl transition shadow-glow-purple active:scale-[0.98]">
-                    Transmit Recovery Token
-                </button>
-                <p class="text-xs text-center text-slate-400"><span id="trigger-login-btn-2" class="text-slate-400 hover:text-white cursor-pointer underline font-medium font-mono">Return to Gateway Access</span></p>
-            </div>
-
-            <div class="mt-6 pt-5 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500 font-mono">
-                <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-500 animate-pulse"></i> 256-BIT SSL SECURE</span>
-                <span>SYSTEM VERSION: v6.0</span>
+            <!-- Footer Legal Policy Links on Login Page -->
+            <div class="mt-4 pt-3 border-t border-slate-800/40 flex flex-wrap items-center justify-center gap-x-3 gap-y-1.5 text-[10px] text-slate-500 font-mono">
+                <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-privacy-login">Privacy Policy</span>
+                <span>•</span>
+                <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-terms-login">Terms of Agreement</span>
+                <span>•</span>
+                <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-refund-login">Refund Policy</span>
+                <span>•</span>
+                <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-faq-login">FAQ</span>
+                <span>•</span>
+                <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-about-login">About Us</span>
+                <span>•</span>
+                <span class="hover:text-slate-300 cursor-pointer underline" id="btn-show-contact-login">Contact Us</span>
             </div>
         </div>
-    </div>
 
-    <div id="appContainer" class="hidden flex-col min-h-screen relative z-10 pb-16 lg:pb-0">
-        <div class="bg-[#030712] border-b border-slate-900/60 px-4 py-1.5 text-[9px] text-slate-500 font-mono tracking-widest flex items-center justify-between overflow-x-auto whitespace-nowrap select-none">
-            <div class="flex items-center space-x-2">
+        <!-- Signup Form view -->
+        <div id="signupForm" class="space-y-4 hidden">
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Mobile Number</label>
+                <div class="flex gap-2">
+                    <div class="relative flex-1">
+                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-phone text-sm"></i></span>
+                        <input type="tel" id="registerMobile" placeholder="10-digit mobile number" maxlength="10" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500 font-mono">
+                    </div>
+                    <button type="button" id="btn-send-otp" class="px-4 py-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold text-xs rounded-2xl uppercase tracking-wider transition shrink-0">
+                        Send OTP
+                    </button>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Verification OTP Code</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-shield-check text-sm"></i></span>
+                    <input type="number" id="registerOtp" placeholder="Enter 6-digit OTP received" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-mono tracking-widest transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Provide Target Email (Optional)</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-at text-sm"></i></span>
+                    <input type="email" id="registerEmail" placeholder="Enter registration email" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Configure Secure Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-key text-sm"></i></span>
+                    <input type="password" id="registerPass" placeholder="Min 6 characters required" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Referral Code (Optional)</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-ticket text-sm"></i></span>
+                    <input type="text" id="registerRefCode" placeholder="Ex: SGS-8A3B2C" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-mono uppercase transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+
+            <div class="text-[11px] text-slate-400 leading-relaxed bg-[#0d1220]/85 p-3 rounded-xl border border-slate-850 flex items-start space-x-2">
+                <input type="checkbox" id="agree-terms" checked class="mt-0.5 rounded bg-slate-900 border-slate-850 text-rose-500 focus:ring-rose-500">
+                <label for="agree-terms">I authorize the secure <span class="text-rose-400 cursor-pointer underline" id="btn-show-privacy">Privacy Mandate</span> and <span class="text-rose-400 cursor-pointer underline" id="btn-show-terms">Terms of Agreement</span>.</label>
+            </div>
+
+            <button id="register-submit-btn" type="button" class="w-full py-3.5 bg-gradient-to-r from-amber-600 via-rose-600 to-amber-600 hover:from-amber-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98]">
+                Verify OTP & Create Account
+            </button>
+            <p class="text-xs text-center text-slate-400">Already registered? <span id="trigger-login-btn" class="text-amber-400 font-bold cursor-pointer hover:underline">Access Terminal</span></p>
+        </div>
+
+        <!-- Forgot Password Form view -->
+        <div id="forgotForm" class="space-y-4 hidden">
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Recovery Target Email</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-paper-plane text-sm"></i></span>
+                    <input type="email" id="forgotEmail" placeholder="Enter registered email address" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+            <button id="reset-submit-btn" class="w-full py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-widest rounded-2xl transition shadow-glow-purple active:scale-[0.98]">
+                Transmit Recovery Token
+            </button>
+            <p class="text-xs text-center text-slate-400"><span id="trigger-login-btn-2" class="text-slate-400 hover:text-white cursor-pointer underline font-medium font-mono">Return to Gateway Access</span></p>
+        </div>
+
+        <div class="mt-6 pt-5 border-t border-slate-800/60 flex items-center justify-between text-[10px] text-slate-500 font-mono">
+            <span class="flex items-center gap-1.5"><i class="fa-solid fa-circle-check text-emerald-500 animate-pulse"></i> 256-BIT SSL SECURE</span>
+            <span>SYSTEM VERSION: v6.0</span>
+        </div>
+    </div>
+</div>
+
+<div id="appContainer" class="hidden flex-col min-h-screen relative z-10 pb-16 lg:pb-0">
+    <div class="bg-[#030712] border-b border-slate-900/60 px-4 py-1.5 text-[9px] text-slate-500 font-mono tracking-widest flex items-center justify-between overflow-x-auto whitespace-nowrap select-none">
+        <div class="flex items-center space-x-2">
                 <span class="flex h-1.5 w-1.5 relative">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-1.5 w-1.5 bg-emerald-500"></span>
                 </span>
-                <span>LIVE AUTH HANDSHAKE COMPLETED SECURELY</span>
-            </div>
-            <div class="hidden sm:flex items-center space-x-4">
-                <span>LATENCY: 8ms</span>
-                <span>ENC: AES-256</span>
-            </div>
+            <span>LIVE AUTH HANDSHAKE COMPLETED SECURELY</span>
         </div>
-
-        <header class="glass-panel sticky top-0 z-40 border-b border-slate-800/50 px-4 md:px-8 py-3.5 flex justify-between items-center shadow-2xl">
-            <div class="flex items-center space-x-3">
-                <button id="drawer-toggle-btn" class="text-slate-400 hover:text-rose-500 p-2.5 hover:bg-slate-900 rounded-xl border border-slate-800/40 transition">
-                    <i class="fa-solid fa-bars text-base sm:text-lg"></i>
-                </button>
-                <span class="text-base sm:text-lg font-black tracking-tight text-white flex items-center space-x-2">
-                    <span class="vip-gradient-text font-black">SGS INSTABOOST</span>
-                </span>
-            </div>
-            
-            <div class="bg-[#090d16] border border-emerald-500/20 shadow-glow-emerald px-3 sm:px-4 py-2 rounded-2xl flex items-center space-x-2">
-                <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
-                <span class="text-[9px] uppercase font-bold tracking-wider text-slate-400 hidden sm:inline font-mono">Balance</span>
-                <span class="text-xs sm:text-sm font-black tracking-wide text-white">₹<span id="userBalance">0.00</span></span>
-            </div>
-        </header>
-
-        <div class="flex flex-1 flex-col lg:flex-row max-w-7xl w-full mx-auto p-4 md:p-6 gap-6">
-            
-            <aside class="hidden lg:flex lg:w-64 flex-col gap-2 shrink-0 border-r border-slate-800/30 pr-6">
-                <button id="tab-btn-dashboard" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-semibold transition tab-btn glass-panel-active text-white">
-                    <i class="fa-solid fa-circle-plus text-rose-500"></i><span>New Order Hub</span>
-                </button>
-                <button id="tab-btn-myorders" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
-                    <i class="fa-solid fa-folder-open text-sky-400"></i><span>Order Logs</span>
-                </button>
-                <button id="tab-btn-addfunds" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
-                    <i class="fa-solid fa-wallet text-emerald-400"></i><span>Settle Wallet</span>
-                </button>
-                <button id="tab-btn-refer" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
-                    <i class="fa-solid fa-gift text-amber-500"></i><span>Affiliate Program</span>
-                </button>
-                
-                <div class="my-4 border-t border-slate-800/60"></div>
-                
-                <button id="btn-desktop-main" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-globe text-blue-500"></i><span>Main Website</span>
-                </button>
-                <button id="btn-desktop-security" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
-                    <i class="fa-solid fa-shield-halved text-emerald-500"></i><span>Security Directives</span>
-                </button>
-            </aside>
-
-            <!-- Drawer Profile Side Panel -->
-            <div id="sideDrawer" class="fixed inset-y-0 left-0 w-80 bg-[#090d16] border-r border-slate-850 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl overflow-y-auto">
-                <div class="p-6 border-b border-slate-800/80 bg-[#0d1220]/50 flex items-center justify-between">
-                    <div class="flex items-center space-x-3 overflow-hidden">
-                        <img id="drawerUserLogo" src="https://api.dicebear.com/7.x/bottts/svg?seed=SGS" class="w-12 h-12 rounded-2xl bg-slate-900 p-1 border border-rose-500/20 shadow-md" alt="User Vector">
-                        <div class="overflow-hidden">
-                            <p class="text-[9px] uppercase font-mono tracking-widest text-rose-500 font-bold">Secure Instance</p>
-                            <p id="drawerUserIdentity" class="text-xs text-slate-300 font-mono truncate font-semibold">Loading Profile...</p>
-                        </div>
-                    </div>
-                    <button id="drawer-close-btn" class="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-lg transition"><i class="fa-solid fa-xmark text-lg"></i></button>
-                </div>
-                
-                <div class="p-6 flex-1 flex flex-col justify-between">
-                    <div class="space-y-6">
-                        <div class="bg-[#030712] p-4 rounded-2xl border border-slate-850 space-y-3">
-                            <p class="text-xs uppercase font-bold tracking-wider text-slate-300">Auditing Compliance</p>
-                            <div class="flex items-center text-xs text-slate-400 gap-2">
-                                <i class="fa-solid fa-circle-check text-emerald-500"></i>
-                                <span>No Tracker Policy Engaged</span>
-                            </div>
-                        </div>
-
-                        <div class="space-y-3">
-                            <p class="text-[10px] uppercase font-mono text-slate-500 tracking-wider">Social Channels</p>
-                            <div class="grid grid-cols-2 gap-2">
-                                <button id="btn-insta-social" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
-                                    <i class="fa-brands fa-instagram text-rose-500"></i><span>Instagram</span>
-                                </button>
-                                <button id="btn-yt-social" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
-                                    <i class="fa-brands fa-youtube text-red-500"></i><span>YouTube</span>
-                                </button>
-                            </div>
-                        </div>
-
-                        <button id="drawerAdminLink" class="w-full text-left p-3.5 rounded-xl flex items-center space-x-3 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 font-bold hidden shadow-glow-purple transition">
-                            <i class="fa-solid fa-user-shield text-purple-400"></i><span>Admin Command Center</span>
-                        </button>
-                    </div>
-
-                    <div class="space-y-4 pt-6">
-                        <button id="drawer-logout-btn" class="w-full py-3.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 font-bold tracking-widest uppercase text-xs rounded-xl flex items-center justify-center space-x-2 transition active:scale-[0.98]">
-                            <i class="fa-solid fa-power-off text-rose-500"></i>
-                            <span>Terminate Active Session</span>
-                        </button>
-
-                        <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
-                            <span class="hover:underline cursor-pointer" id="btn-show-privacy-2">Privacy Policy</span>
-                            <span class="hover:underline cursor-pointer" id="btn-show-terms-2">Terms-of-Agreement</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div id="drawerOverlay" class="fixed inset-0 bg-[#030712]/85 z-40 hidden backdrop-blur-md transition-all duration-300"></div>
-
-            <main class="flex-1 space-y-6 z-10 pb-6">
-                <!-- TAB 1: NEW SMM ORDER HUB -->
-                <section id="tab-dashboard" class="space-y-6 tab-content">
-                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div class="xl:col-span-2 glass-panel p-5 sm:p-7 rounded-[32px] space-y-5 relative">
-                            <div class="flex items-center justify-between border-b border-slate-800/60 pb-3">
-                                <h2 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
-                                    <i class="fa-brands fa-instagram text-rose-500"></i>
-                                    <span>INSTANT PIPELINE ENTRY</span>
-                                </h2>
-                                <span class="text-[9px] text-slate-400 font-mono bg-[#0d1220] px-3 py-1 rounded-full border border-slate-850">AUTOMATED DISPATCH</span>
-                            </div>
-
-                            <div class="space-y-4.5">
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">1. Target Category Module</label>
-                                    <select id="categorySelect" class="w-full bg-[#0d1220] p-3.5 sm:p-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition">
-                                        <option value="views">🎬 Instagram Reels Views</option>
-                                        <option value="likes">❤️ Instagram Premium Likes</option>
-                                        <option value="followers">👥 Instagram Real Followers</option>
-                                        <option value="youtube_views">▶️ Youtube Shorts Views</option>
-                                        <option value="youtube_view">▶️ Youtube Long Views</option>
-                                        <option value="youtube_like">❤️ Youtube Likes</option>
-                                        <option value="subscriber">❤️ Youtube Subscribers</option>
-                                        <option value="youtube_comment">💬 Youtube comments</option>
-                                        <option value="facebook_views">🎬 Facebook Views</option>
-                                        <option value="facebook_like">❤️ Facebook Likes</option>
-                                        <option value="facebook_followers">🎬 Facebook Followers</option>
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">2. Specific Service Node Package</label>
-                                    <select id="serviceSelect" class="w-full bg-[#0d1220] p-3.5 sm:p-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-300 text-xs font-semibold transition leading-relaxed">
-                                    </select>
-                                </div>
-
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">3. Destination Link URL</label>
-                                    <div class="relative">
-                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-link text-sm"></i></span>
-                                        <input type="url" id="targetOrderLink" placeholder="https://www.instagram.com/reel/..." class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-mono transition">
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">4. Dispatch Request Quantity</label>
-                                    <div class="relative">
-                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-arrow-up-9-1 text-sm"></i></span>
-                                        <input type="number" id="targetOrderQty" placeholder="Min: 100 - Max: 500,000" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-bold transition">
-                                    </div>
-                                </div>
-
-                                <div id="costDisplayBox" class="bg-[#030712] border border-slate-850 p-4 rounded-2xl flex justify-between items-center">
-                                    <div>
-                                        <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 font-mono">Total Estimated Cost</span>
-                                        <p class="text-[9px] text-slate-500 font-mono mt-0.5">Charged in Indian Rupees (INR)</p>
-                                    </div>
-                                    <span class="text-xl sm:text-2xl font-black text-rose-500 tracking-tight">₹<span id="calculatedCostText">0.00</span></span>
-                                </div>
-
-                                <button id="submit-order-pipeline-btn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-amber-500 text-white font-extrabold uppercase tracking-widest text-xs shadow-glow-rose active:scale-[0.98] transition flex items-center justify-center space-x-2">
-                                    <span>DISPATCH SMM PIPELINE</span>
-                                    <i class="fa-solid fa-paper-plane animate-pulse"></i>
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="space-y-6">
-                            <div class="glass-panel p-5 rounded-[24px] relative overflow-hidden">
-                                <h3 class="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-3">Health Status Monitor</h3>
-                                <div class="space-y-3 text-xs">
-                                    <div class="flex items-center justify-between text-slate-300">
-                                        <span class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Active Connection</span>
-                                        <span class="font-mono text-emerald-400 font-bold">ONLINE</span>
-                                    </div>
-                                    <div class="flex items-center justify-between text-slate-300">
-                                        <span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-500"></i> Dispatch System</span>
-                                        <span class="font-mono text-slate-300">INSTANT DISPATCH</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 2: MY ORDERS LEDGER -->
-                <section id="tab-myorders" class="space-y-6 tab-content hidden">
-                    <div class="glass-panel p-5 sm:p-7 rounded-[32px] shadow-xl">
-                        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/60 pb-4 mb-4">
-                            <div>
-                                <h2 class="text-base sm:text-lg font-bold text-sky-400 uppercase tracking-wider flex items-center space-x-2">
-                                    <i class="fa-solid fa-folder-open"></i>
-                                    <span>Engine Dispatch Ledger</span>
-                                </h2>
-                                <p class="text-xs text-slate-400 font-mono mt-0.5">Real-time order execution logs synced from Aapkaprovider</p>
-                            </div>
-                        </div>
-                        
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left border-collapse">
-                                <thead>
-                                    <tr class="border-b border-slate-850 text-[10px] uppercase font-mono tracking-wider text-slate-400 bg-[#0d1220]/60">
-                                        <th class="p-3 rounded-l-xl">ID</th>
-                                        <th class="p-3">Date</th>
-                                        <th class="p-3">Link</th>
-                                        <th class="p-3 font-mono">Charge</th>
-                                        <th class="p-3 font-mono">Start count</th>
-                                        <th class="p-3 font-mono">Quantity</th>
-                                        <th class="p-3">Service</th>
-                                        <th class="p-3 rounded-r-xl">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="myOrdersTableStream" class="text-xs font-semibold divide-y divide-slate-850">
-                                    <tr>
-                                        <td colspan="8" class="p-12 text-center text-slate-500 italic font-mono">
-                                            No verified transaction nodes tracked on this account chain.
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 3: ADD DEPOSIT FUNDS CENTER -->
-                <section id="tab-addfunds" class="space-y-6 tab-content hidden">
-                    <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
-                        <div class="xl:col-span-2 glass-panel p-5 sm:p-7 rounded-[32px] space-y-5">
-                            <div class="border-b border-slate-800/60 pb-3">
-                                <h2 class="text-base sm:text-lg font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
-                                    <i class="fa-solid fa-shield-halved"></i>
-                                    <span>Wallet Settlement Clearance</span>
-                                </h2>
-                                <p class="text-xs text-slate-400 font-mono mt-0.5">Initialize and settle transactions via instant UPI QR</p>
-                            </div>
-
-                            <div class="space-y-4">
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">A. Specify Desired Amount (₹)</label>
-                                    <div class="relative">
-                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-indian-rupee-sign text-sm"></i></span>
-                                        <input type="number" id="fundAmount" placeholder="Enter INR value (Ex: 500)" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-bold transition">
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">B. Sender Name / PhonePe UPI Name</label>
-                                    <div class="relative">
-                                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-user text-sm"></i></span>
-                                        <input type="text" id="utrInput" placeholder="Enter Your Name" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-semibold transition">
-                                    </div>
-                                    <p class="text-[9px] text-slate-500 font-mono mt-2 leading-relaxed">Apne PhonePe/Bank account me likha Sender Name .</p>
-                                </div>
-
-                                <button id="submit-deposit-btn" class="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold uppercase tracking-widest text-xs rounded-2xl shadow-glow-emerald transition active:scale-[0.98]">
-                                    Submit Payments
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="glass-panel p-6 rounded-[32px] flex flex-col items-center justify-center text-center space-y-4">
-                            <h3 class="text-xs uppercase font-black tracking-widest text-slate-400">Secure QR Matrix</h3>
-                            
-                            <div id="qrPrompt" class="text-slate-500 text-xs px-6 py-12 border border-dashed border-slate-800 rounded-2xl w-full">
-                                <i class="fa-solid fa-qrcode text-4xl mb-3 text-slate-600 animate-pulse"></i>
-                                <p class="font-mono">Input a valid numerical currency amount in the left panel to invoke the UPI QR Vector.</p>
-                            </div>
-
-                            <div id="qrMatrixContainer" class="hidden p-3 bg-white rounded-2xl relative shadow-2xl">
-                                <img id="secureQrImg" src="" class="w-44 h-44 mx-auto" alt="UPI QR">
-                            </div>
-
-                            <div id="qrDataSummary" class="mt-2 text-[10px] font-mono font-bold bg-[#0d1220] px-3.5 py-2 rounded-xl border border-slate-850 text-emerald-400 hidden"></div>
-                        </div>
-                    </div>
-
-                    <div class="glass-panel p-5 sm:p-7 rounded-[32px]">
-                        <h3 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">
-                            <i class="fa-solid fa-clock-history mr-1.5 text-emerald-400"></i>
-                            <span>Account Settle Ledger Records</span>
-                        </h3>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead>
-                                    <tr class="text-slate-400 border-b border-slate-850 text-[10px] font-mono uppercase bg-[#0d1220]/40">
-                                        <th class="p-3">Value</th>
-                                        <th class="p-3">Sender / UTR Ref</th>
-                                        <th class="p-3">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="userLedgerRows" class="text-xs divide-y divide-slate-850">
-                                    <tr>
-                                        <td colspan="3" class="p-6 text-center text-slate-600 italic font-mono">No tracking sessions deployed inside active profile.</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 4: REFFERAL AFFILIATE CENTER -->
-                <section id="tab-refer" class="tab-content hidden max-w-xl mx-auto">
-                    <div class="glass-panel p-6 sm:p-8 rounded-[32px] text-center space-y-5 relative overflow-hidden">
-                        <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/20 shadow-glow-rose">
-                            <i class="fa-solid fa-gift animate-bounce"></i>
-                        </div>
-                        
-                        <div class="space-y-2">
-                            <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">Refer & Earn Capital</h2>
-                            <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
-                                Share your platform node link or referral code. Upon successful verification of their first deposit, your wallet balance increases by a random reward of <span class="text-amber-400 font-bold">₹1.00 to ₹2.00</span> automatically.
-                            </p>
-                        </div>
-
-                        <div class="space-y-3">
-                            <!-- Referral Code Card -->
-                            <div class="bg-[#030712] p-3.5 rounded-2xl border border-slate-850 flex items-center justify-between gap-3">
-                                <div class="text-left">
-                                    <span class="text-[9px] uppercase font-mono text-slate-500 block">Your Referral Code</span>
-                                    <span id="referCode" class="text-sm font-extrabold font-mono text-amber-400 select-all">SGS-LOADING</span>
-                                </div>
-                                <button id="btn-copy-ref-code" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold px-4 py-2 rounded-xl text-xs whitespace-nowrap tracking-wider uppercase transition active:scale-[0.98]">
-                                    Copy Code
-                                </button>
-                            </div>
-
-                            <!-- Referral Link Card -->
-                            <div class="bg-[#030712] p-3.5 rounded-2xl border border-slate-850 flex flex-col sm:flex-row items-center justify-between gap-3">
-                                <div class="text-left overflow-hidden w-full sm:w-auto">
-                                    <span class="text-[9px] uppercase font-mono text-slate-500 block">Your Node Link</span>
-                                    <span id="referLink" class="text-xs font-mono text-slate-300 select-all overflow-hidden text-left truncate block">https://sgsboost.net/ref?id=loading</span>
-                                </div>
-                                <button id="btn-copy-ref" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-2 rounded-xl text-xs whitespace-nowrap tracking-wider uppercase transition active:scale-[0.98]">
-                                    Copy Link
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-            </main>
+        <div class="hidden sm:flex items-center space-x-4">
+            <span>LATENCY: 8ms</span>
+            <span>ENC: AES-256</span>
         </div>
-
-        <!-- Mobile Bottom Navigation Menu -->
-        <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#090d16]/95 border-t border-slate-800/80 backdrop-blur-lg z-40 flex justify-around items-center py-2.5 px-3 shadow-[0_-10px_35px_rgba(0,0,0,0.6)]">
-            <button id="mbtn-dashboard" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
-                <i class="fa-solid fa-circle-plus text-lg"></i>
-                <span class="text-[9px] font-bold tracking-wider uppercase">Order</span>
-            </button>
-            <button id="mbtn-myorders" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
-                <i class="fa-solid fa-list-ul text-lg"></i>
-                <span class="text-[9px] font-bold tracking-wider uppercase">Logs</span>
-            </button>
-            <button id="mbtn-addfunds" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
-                <i class="fa-solid fa-wallet text-lg"></i>
-                <span class="text-[9px] font-bold tracking-wider uppercase">Deposit</span>
-            </button>
-            <button id="mbtn-refer" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
-                <i class="fa-solid fa-gift text-lg"></i>
-                <span class="text-[9px] font-bold tracking-wider uppercase">Earn</span>
-            </button>
-        </nav>
-
-        <footer class="hidden lg:block mt-auto border-t border-slate-800/60 bg-[#030712] py-5 px-8">
-            <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-slate-500 font-mono">
-                <div class="flex items-center space-x-2">
-                    <i class="fa-solid fa-shield text-emerald-500"></i>
-                    <span>SGS PLATFORM ARCHITECTURE • SECURE SHA-256 COMPLIANCE PROTOCOLS</span>
-                </div>
-                <div class="flex items-center gap-6">
-                    <span class="hover:text-slate-300 cursor-pointer" id="btn-show-privacy-3">Privacy Policy</span>
-                    <span class="hover:text-slate-300 cursor-pointer" id="btn-show-terms-3">Terms-of-Agreement</span>
-                </div>
-            </div>
-        </footer>
     </div>
 
-    <!-- Admin Console Dashboard overlay -->
-    <div id="adminCoreConsole" class="fixed inset-0 bg-[#030712] hidden flex-col z-50 overflow-y-auto">
-        <header class="bg-[#0d1220] border-b border-purple-900/40 p-4 sm:p-5 flex justify-between items-center shadow-lg sticky top-0 z-10">
-            <div class="flex items-center space-x-3">
+    <header class="glass-panel sticky top-0 z-40 border-b border-slate-800/50 px-4 md:px-8 py-3.5 flex justify-between items-center shadow-2xl">
+        <div class="flex items-center space-x-3">
+            <button id="drawer-toggle-btn" class="text-slate-400 hover:text-rose-500 p-2.5 hover:bg-slate-900 rounded-xl border border-slate-800/40 transition">
+                <i class="fa-solid fa-bars text-base sm:text-lg"></i>
+            </button>
+            <span class="text-base sm:text-lg font-black tracking-tight text-white flex items-center space-x-2">
+                    <span class="vip-gradient-text font-black">SGS INSTABOOST</span>
+                </span>
+        </div>
+
+        <div class="bg-[#090d16] border border-emerald-500/20 shadow-glow-emerald px-3 sm:px-4 py-2 rounded-2xl flex items-center space-x-2">
+            <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span>
+            <span class="text-[9px] uppercase font-bold tracking-wider text-slate-400 hidden sm:inline font-mono">Balance</span>
+            <span class="text-xs sm:text-sm font-black tracking-wide text-white">₹<span id="userBalance">0.00</span></span>
+        </div>
+    </header>
+
+    <div class="flex flex-1 flex-col lg:flex-row max-w-7xl w-full mx-auto p-4 md:p-6 gap-6">
+
+        <aside class="hidden lg:flex lg:w-64 flex-col gap-2 shrink-0 border-r border-slate-800/30 pr-6">
+            <button id="tab-btn-dashboard" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-semibold transition tab-btn glass-panel-active text-white">
+                <i class="fa-solid fa-circle-plus text-rose-500"></i><span>New Order Hub</span>
+            </button>
+            <button id="tab-btn-myorders" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
+                <i class="fa-solid fa-folder-open text-sky-400"></i><span>Order Logs</span>
+            </button>
+            <button id="tab-btn-addfunds" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
+                <i class="fa-solid fa-wallet text-emerald-400"></i><span>Settle Wallet</span>
+            </button>
+            <button id="tab-btn-refer" class="text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn">
+                <i class="fa-solid fa-gift text-amber-500"></i><span>Affiliate Program</span>
+            </button>
+
+            <div class="my-4 border-t border-slate-800/60"></div>
+
+            <button id="btn-desktop-main" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-globe text-blue-500"></i><span>Main Website</span>
+            </button>
+            <button id="btn-desktop-security" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-shield-halved text-emerald-500"></i><span>Security Directives</span>
+            </button>
+            <button id="btn-desktop-refund" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-arrow-rotate-left text-amber-400"></i><span>Refund Policies</span>
+            </button>
+            <button id="btn-desktop-faq" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-circle-question text-sky-400"></i><span>Knowledge Base / FAQ</span>
+            </button>
+            <button id="btn-desktop-about" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
+                <i class="fa-solid fa-address-card text-purple-400"></i><span>About Developer</span>
+            </button>
+            <button id="btn-desktop-contact" class="text-left p-3 rounded-xl flex items-center space-x-3 text-xs text-slate-400 hover:text-white transition">
+                <i class="fa-brands fa-whatsapp text-emerald-400"></i><span>24/7 Desk Contact</span>
+            </button>
+        </aside>
+
+        <!-- Drawer Profile Side Panel -->
+        <div id="sideDrawer" class="fixed inset-y-0 left-0 w-80 bg-[#090d16] border-r border-slate-850 z-50 transform -translate-x-full transition-transform duration-300 ease-in-out flex flex-col shadow-2xl overflow-y-auto">
+            <div class="p-6 border-b border-slate-800/80 bg-[#0d1220]/50 flex items-center justify-between">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <img id="drawerUserLogo" src="https://api.dicebear.com/7.x/bottts/svg?seed=SGS" class="w-12 h-12 rounded-2xl bg-slate-900 p-1 border border-rose-500/20 shadow-md" alt="User Vector">
+                    <div class="overflow-hidden">
+                        <p class="text-[9px] uppercase font-mono tracking-widest text-rose-500 font-bold">Secure Instance</p>
+                        <p id="drawerUserIdentity" class="text-xs text-slate-300 font-mono truncate font-semibold">Loading Profile...</p>
+                    </div>
+                </div>
+                <button id="drawer-close-btn" class="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-lg transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+            </div>
+
+            <div class="p-6 flex-1 flex flex-col justify-between">
+                <div class="space-y-6">
+                    <div class="bg-[#030712] p-4 rounded-2xl border border-slate-855 space-y-3">
+                        <p class="text-xs uppercase font-bold tracking-wider text-slate-300">Auditing Compliance</p>
+                        <div class="flex items-center text-xs text-slate-400 gap-2">
+                            <i class="fa-solid fa-circle-check text-emerald-500"></i>
+                            <span>No Tracker Policy Engaged</span>
+                        </div>
+                    </div>
+
+                    <div class="space-y-2">
+                        <p class="text-[10px] uppercase font-mono text-slate-500 tracking-wider">Compliance & Directives</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="drawer-refund-btn" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
+                                <i class="fa-solid fa-rotate-left text-amber-400"></i><span>Refunds</span>
+                            </button>
+                            <button id="drawer-faq-btn" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
+                                <i class="fa-solid fa-circle-question text-sky-400"></i><span>FAQ</span>
+                            </button>
+                            <button id="drawer-about-btn" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
+                                <i class="fa-solid fa-info-circle text-purple-400"></i><span>About</span>
+                            </button>
+                            <button id="drawer-contact-btn" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
+                                <i class="fa-brands fa-whatsapp text-emerald-400"></i><span>Contact</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-3">
+                        <p class="text-[10px] uppercase font-mono text-slate-500 tracking-wider">Social Channels</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button id="btn-insta-social" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
+                                <i class="fa-brands fa-instagram text-rose-500"></i><span>Instagram</span>
+                            </button>
+                            <button id="btn-yt-social" class="py-2.5 bg-[#0d1220]/60 hover:bg-slate-900 border border-slate-800/60 rounded-xl text-xs text-slate-300 flex items-center justify-center space-x-1.5 transition">
+                                <i class="fa-brands fa-youtube text-red-500"></i><span>YouTube</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <button id="drawerAdminLink" class="w-full text-left p-3.5 rounded-xl flex items-center space-x-3 bg-purple-500/10 hover:bg-purple-500/20 text-purple-300 border border-purple-500/20 font-bold hidden shadow-glow-purple transition">
+                        <i class="fa-solid fa-user-shield text-purple-400"></i><span>Admin Command Center</span>
+                    </button>
+                </div>
+
+                <div class="space-y-4 pt-6">
+                    <button id="drawer-logout-btn" class="w-full py-3.5 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 hover:text-rose-300 font-bold tracking-widest uppercase text-xs rounded-xl flex items-center justify-center space-x-2 transition active:scale-[0.98]">
+                        <i class="fa-solid fa-power-off text-rose-500"></i>
+                        <span>Terminate Active Session</span>
+                    </button>
+
+                    <div class="flex items-center justify-between text-[10px] text-slate-500 font-mono px-1">
+                        <span class="hover:underline cursor-pointer" id="btn-show-privacy-2">Privacy Policy</span>
+                        <span class="hover:underline cursor-pointer" id="btn-show-terms-2">Terms-of-Agreement</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div id="drawerOverlay" class="fixed inset-0 bg-[#030712]/85 z-40 hidden backdrop-blur-md transition-all duration-300"></div>
+
+        <main class="flex-1 space-y-6 z-10 pb-6">
+            <!-- TAB 1: NEW SMM ORDER HUB -->
+            <section id="tab-dashboard" class="space-y-6 tab-content">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-2 glass-panel p-5 sm:p-7 rounded-[32px] space-y-5 relative">
+                        <div class="flex items-center justify-between border-b border-slate-800/60 pb-3">
+                            <h2 class="text-base sm:text-lg font-bold text-white flex items-center space-x-2">
+                                <i class="fa-brands fa-instagram text-rose-500"></i>
+                                <span>INSTANT PIPELINE ENTRY</span>
+                            </h2>
+                            <span class="text-[9px] text-slate-400 font-mono bg-[#0d1220] px-3 py-1 rounded-full border border-slate-850">AUTOMATED DISPATCH</span>
+                        </div>
+
+                        <div class="space-y-4.5">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">1. Target Category Module</label>
+                                <select id="categorySelect" class="w-full bg-[#0d1220] p-3.5 sm:p-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition">
+                                    <option value="views">🎬 Instagram Reels Views</option>
+                                    <option value="likes">❤️ Instagram Premium Likes</option>
+                                    <option value="followers">👥 Instagram Real Followers</option>
+                                    <option value="youtube_views">▶️ Youtube Shorts Views</option>
+                                    <option value="youtube_view">▶️ Youtube Long Views</option>
+                                    <option value="youtube_like">❤️ Youtube Likes</option>
+                                    <option value="subscriber">❤️ Youtube Subscribers</option>
+                                    <option value="youtube_comment">💬 Youtube comments</option>
+                                    <option value="facebook_views">🎬 Facebook Views</option>
+                                    <option value="facebook_like">❤️ Facebook Likes</option>
+                                    <option value="facebook_followers">🎬 Facebook Followers</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">2. Specific Service Node Package</label>
+                                <select id="serviceSelect" class="w-full bg-[#0d1220] p-3.5 sm:p-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-300 text-xs font-semibold transition leading-relaxed">
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">3. Destination Link URL</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-link text-sm"></i></span>
+                                    <input type="url" id="targetOrderLink" placeholder="https://www.instagram.com/reel/..." class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-mono transition">
+                                </div>
+                            </div>
+
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold tracking-widest text-slate-300 mb-2">4. Dispatch Request Quantity</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-arrow-up-9-1 text-sm"></i></span>
+                                    <input type="number" id="targetOrderQty" placeholder="Min: 100 - Max: 500,000" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-bold transition">
+                                </div>
+                            </div>
+
+                            <div id="costDisplayBox" class="bg-[#030712] border border-slate-855 p-4 rounded-2xl flex justify-between items-center">
+                                <div>
+                                    <span class="text-[10px] uppercase tracking-wider font-bold text-slate-400 font-mono">Total Estimated Cost</span>
+                                    <p class="text-[9px] text-slate-500 font-mono mt-0.5">Charged in Indian Rupees (INR)</p>
+                                </div>
+                                <span class="text-xl sm:text-2xl font-black text-rose-500 tracking-tight">₹<span id="calculatedCostText">0.00</span></span>
+                            </div>
+
+                            <button id="submit-order-pipeline-btn" class="w-full py-4 rounded-2xl bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-amber-500 text-white font-extrabold uppercase tracking-widest text-xs shadow-glow-rose active:scale-[0.98] transition flex items-center justify-center space-x-2">
+                                <span>DISPATCH SMM PIPELINE</span>
+                                <i class="fa-solid fa-paper-plane animate-pulse"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6">
+                        <div class="glass-panel p-5 rounded-[24px] relative overflow-hidden">
+                            <h3 class="text-[10px] uppercase font-black text-slate-400 tracking-widest mb-3">Health Status Monitor</h3>
+                            <div class="space-y-3 text-xs">
+                                <div class="flex items-center justify-between text-slate-300">
+                                    <span class="flex items-center gap-2"><span class="h-1.5 w-1.5 bg-emerald-500 rounded-full animate-pulse"></span> Active Connection</span>
+                                    <span class="font-mono text-emerald-400 font-bold">ONLINE</span>
+                                </div>
+                                <div class="flex items-center justify-between text-slate-300">
+                                    <span class="flex items-center gap-2"><i class="fa-solid fa-bolt text-amber-500"></i> Dispatch System</span>
+                                    <span class="font-mono text-slate-300">INSTANT DISPATCH</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 2: MY ORDERS LEDGER -->
+            <section id="tab-myorders" class="space-y-6 tab-content hidden">
+                <div class="glass-panel p-5 sm:p-7 rounded-[32px] shadow-xl">
+                    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 border-b border-slate-800/60 pb-4 mb-4">
+                        <div>
+                            <h2 class="text-base sm:text-lg font-bold text-sky-400 uppercase tracking-wider flex items-center space-x-2">
+                                <i class="fa-solid fa-folder-open"></i>
+                                <span>Engine Dispatch Ledger</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 font-mono mt-0.5">Real-time order execution logs synced from Aapkaprovider</p>
+                        </div>
+                    </div>
+
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left border-collapse">
+                            <thead>
+                            <tr class="border-b border-slate-855 text-[10px] uppercase font-mono tracking-wider text-slate-400 bg-[#0d1220]/60">
+                                <th class="p-3 rounded-l-xl">ID</th>
+                                <th class="p-3">Date</th>
+                                <th class="p-3">Link</th>
+                                <th class="p-3 font-mono">Charge</th>
+                                <th class="p-3 font-mono">Start count</th>
+                                <th class="p-3 font-mono">Quantity</th>
+                                <th class="p-3">Service</th>
+                                <th class="p-3 rounded-r-xl">Status</th>
+                            </tr>
+                            </thead>
+                            <tbody id="myOrdersTableStream" class="text-xs font-semibold divide-y divide-slate-855">
+                            <tr>
+                                <td colspan="8" class="p-12 text-center text-slate-500 italic font-mono">
+                                    No verified transaction nodes tracked on this account chain.
+                                </td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 3: ADD DEPOSIT FUNDS CENTER -->
+            <section id="tab-addfunds" class="space-y-6 tab-content hidden">
+                <div class="grid grid-cols-1 xl:grid-cols-3 gap-6">
+                    <div class="xl:col-span-2 glass-panel p-5 sm:p-7 rounded-[32px] space-y-5">
+                        <div class="border-b border-slate-800/60 pb-3">
+                            <h2 class="text-base sm:text-lg font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
+                                <i class="fa-solid fa-shield-halved"></i>
+                                <span>Wallet Settlement Clearance</span>
+                            </h2>
+                            <p class="text-xs text-slate-400 font-mono mt-0.5">Initialize and settle transactions via instant UPI QR</p>
+                        </div>
+
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">A. Specify Desired Amount (₹)</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-indian-rupee-sign text-sm"></i></span>
+                                    <input type="number" id="fundAmount" placeholder="Enter INR value (Ex: 500)" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-bold transition">
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] uppercase font-bold text-slate-300 mb-2 tracking-wider">B. Sender Name / PhonePe UPI Name</label>
+                                <div class="relative">
+                                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-user text-sm"></i></span>
+                                    <input type="text" id="utrInput" placeholder="Enter Your Name" class="w-full bg-[#0d1220] pl-10 pr-4 py-3.5 sm:py-4 rounded-2xl border border-slate-800 focus:outline-none focus:border-emerald-500 text-slate-200 text-sm font-semibold transition">
+                                </div>
+                                <p class="text-[9px] text-slate-500 font-mono mt-2 leading-relaxed">Apne PhonePe/Bank account me likha Sender Name .</p>
+                            </div>
+
+                            <button id="submit-deposit-btn" class="w-full py-4 bg-gradient-to-r from-emerald-600 via-teal-600 to-emerald-600 hover:from-emerald-500 hover:to-teal-500 text-white font-extrabold uppercase tracking-widest text-xs rounded-2xl shadow-glow-emerald transition active:scale-[0.98]">
+                                Submit Payments
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="glass-panel p-6 rounded-[32px] flex flex-col items-center justify-center text-center space-y-4">
+                        <h3 class="text-xs uppercase font-black tracking-widest text-slate-400">Secure QR Matrix</h3>
+
+                        <div id="qrPrompt" class="text-slate-500 text-xs px-6 py-12 border border-dashed border-slate-800 rounded-2xl w-full">
+                            <i class="fa-solid fa-qrcode text-4xl mb-3 text-slate-600 animate-pulse"></i>
+                            <p class="font-mono">Input a valid numerical currency amount in the left panel to invoke the UPI QR Vector.</p>
+                        </div>
+
+                        <div id="qrMatrixContainer" class="hidden p-3 bg-white rounded-2xl relative shadow-2xl">
+                            <img id="secureQrImg" src="" class="w-44 h-44 mx-auto" alt="UPI QR">
+                        </div>
+
+                        <div id="qrDataSummary" class="mt-2 text-[10px] font-mono font-bold bg-[#0d1220] px-3.5 py-2 rounded-xl border border-slate-850 text-emerald-400 hidden"></div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-5 sm:p-7 rounded-[32px]">
+                    <h3 class="text-xs font-black uppercase text-slate-400 tracking-wider mb-3">
+                        <i class="fa-solid fa-clock-history mr-1.5 text-emerald-400"></i>
+                        <span>Account Settle Ledger Records</span>
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="w-full text-left">
+                            <thead>
+                            <tr class="text-slate-400 border-b border-slate-850 text-[10px] font-mono uppercase bg-[#0d1220]/40">
+                                <th class="p-3">Value</th>
+                                <th class="p-3">Sender / UTR Ref</th>
+                                <th class="p-3">Status</th>
+                            </tr>
+                            </thead>
+                            <tbody id="userLedgerRows" class="text-xs divide-y divide-slate-850">
+                            <tr>
+                                <td colspan="3" class="p-6 text-center text-slate-600 italic font-mono">No tracking sessions deployed inside active profile.</td>
+                            </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </section>
+
+            <!-- TAB 4: REFFERAL AFFILIATE CENTER -->
+            <section id="tab-refer" class="tab-content hidden max-w-xl mx-auto">
+                <div class="glass-panel p-6 sm:p-8 rounded-[32px] text-center space-y-5 relative overflow-hidden">
+                    <div class="w-16 h-16 bg-amber-500/10 text-amber-400 rounded-full flex items-center justify-center mx-auto text-2xl border border-amber-500/20 shadow-glow-rose">
+                        <i class="fa-solid fa-gift animate-bounce"></i>
+                    </div>
+
+                    <div class="space-y-2">
+                        <h2 class="text-xl sm:text-2xl font-black uppercase tracking-tight text-white">Refer & Earn Capital</h2>
+                        <p class="text-xs text-slate-400 max-w-md mx-auto leading-relaxed">
+                            Share your platform node link or referral code. Upon successful verification of their first deposit, your wallet balance increases by a random reward of <span class="text-amber-400 font-bold">₹1.00 to ₹2.00</span> automatically.
+                        </p>
+                    </div>
+
+                    <div class="space-y-3">
+                        <!-- Referral Code Card -->
+                        <div class="bg-[#030712] p-3.5 rounded-2xl border border-slate-855 flex items-center justify-between gap-3">
+                            <div class="text-left">
+                                <span class="text-[9px] uppercase font-mono text-slate-500 block">Your Referral Code</span>
+                                <span id="referCode" class="text-sm font-extrabold font-mono text-amber-400 select-all">SGS-LOADING</span>
+                            </div>
+                            <button id="btn-copy-ref-code" class="bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 font-bold px-4 py-2 rounded-xl text-xs whitespace-nowrap tracking-wider uppercase transition active:scale-[0.98]">
+                                Copy Code
+                            </button>
+                        </div>
+
+                        <!-- Referral Link Card -->
+                        <div class="bg-[#030712] p-3.5 rounded-2xl border border-slate-855 flex flex-col sm:flex-row items-center justify-between gap-3">
+                            <div class="text-left overflow-hidden w-full sm:w-auto">
+                                <span class="text-[9px] uppercase font-mono text-slate-500 block">Your Node Link</span>
+                                <span id="referLink" class="text-xs font-mono text-slate-300 select-all overflow-hidden text-left truncate block">https://sgsboost.net/ref?id=loading</span>
+                            </div>
+                            <button id="btn-copy-ref" class="w-full sm:w-auto bg-amber-500 hover:bg-amber-400 text-slate-950 font-extrabold px-5 py-2 rounded-xl text-xs whitespace-nowrap tracking-wider uppercase transition active:scale-[0.98]">
+                                Copy Link
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Mobile Bottom Navigation Menu -->
+    <nav class="lg:hidden fixed bottom-0 left-0 right-0 bg-[#090d16]/95 border-t border-slate-800/80 backdrop-blur-lg z-40 flex justify-around items-center py-2.5 px-3 shadow-[0_-10px_35px_rgba(0,0,0,0.6)]">
+        <button id="mbtn-dashboard" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
+            <i class="fa-solid fa-circle-plus text-lg"></i>
+            <span class="text-[9px] font-bold tracking-wider uppercase">Order</span>
+        </button>
+        <button id="mbtn-myorders" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
+            <i class="fa-solid fa-list-ul text-lg"></i>
+            <span class="text-[9px] font-bold tracking-wider uppercase">Logs</span>
+        </button>
+        <button id="mbtn-addfunds" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
+            <i class="fa-solid fa-wallet text-lg"></i>
+            <span class="text-[9px] font-bold tracking-wider uppercase">Deposit</span>
+        </button>
+        <button id="mbtn-refer" class="flex flex-col items-center justify-center space-y-1 text-slate-400 transition active:scale-90 focus:outline-none mobile-nav-btn">
+            <i class="fa-solid fa-gift text-lg"></i>
+            <span class="text-[9px] font-bold tracking-wider uppercase">Earn</span>
+        </button>
+    </nav>
+
+    <footer class="hidden lg:block mt-auto border-t border-slate-800/60 bg-[#030712] py-5 px-8">
+        <div class="max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4 text-[10px] text-slate-500 font-mono">
+            <div class="flex items-center space-x-2">
+                <i class="fa-solid fa-shield text-emerald-500"></i>
+                <span>SGS PLATFORM ARCHITECTURE • SECURE SHA-256 COMPLIANCE PROTOCOLS</span>
+            </div>
+            <div class="flex items-center gap-4 flex-wrap">
+                <span class="hover:text-slate-300 cursor-pointer" id="btn-show-privacy-3">Privacy Policy</span>
+                <span class="hover:text-slate-300 cursor-pointer" id="btn-show-terms-3">Terms-of-Agreement</span>
+                <span class="hover:text-slate-300 cursor-pointer" id="btn-show-refund-3">Refund Policy</span>
+                <span class="hover:text-slate-300 cursor-pointer" id="btn-show-faq-3">FAQ</span>
+                <span class="hover:text-slate-300 cursor-pointer" id="btn-show-about-3">About Us</span>
+                <span class="hover:text-slate-300 cursor-pointer" id="btn-show-contact-3">Contact Support</span>
+            </div>
+        </div>
+    </footer>
+</div>
+
+<!-- Admin Console Dashboard overlay -->
+<div id="adminCoreConsole" class="fixed inset-0 bg-[#030712] hidden flex-col z-50 overflow-y-auto">
+    <header class="bg-[#0d1220] border-b border-purple-900/40 p-4 sm:p-5 flex justify-between items-center shadow-lg sticky top-0 z-10">
+        <div class="flex items-center space-x-3">
                 <span class="flex h-2 w-2 relative">
                     <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-purple-400 opacity-75"></span>
                     <span class="relative inline-flex rounded-full h-2 w-2 bg-purple-500"></span>
                 </span>
-                <span class="font-extrabold text-purple-400 text-[11px] sm:text-xs tracking-widest uppercase font-mono"><i class="fa-solid fa-terminal mr-2"></i>ADMIN COMMAND CENTER</span>
-            </div>
-            <div class="flex items-center space-x-2">
-                <button id="admin-logout-btn" class="bg-rose-600 hover:bg-rose-500 border border-rose-500/40 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white transition flex items-center space-x-1.5"><i class="fa-solid fa-power-off"></i><span>Logout</span></button>
-                <button id="admin-close-btn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 transition">Close Console</button>
-            </div>
-        </header>
+            <span class="font-extrabold text-purple-400 text-[11px] sm:text-xs tracking-widest uppercase font-mono"><i class="fa-solid fa-terminal mr-2"></i>ADMIN COMMAND CENTER</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <button id="admin-logout-btn" class="bg-rose-600 hover:bg-rose-500 border border-rose-500/40 px-3.5 py-1.5 rounded-xl text-xs font-bold text-white transition flex items-center space-x-1.5"><i class="fa-solid fa-power-off"></i><span>Logout</span></button>
+            <button id="admin-close-btn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 px-3.5 py-1.5 rounded-xl text-xs font-bold text-slate-300 transition">Close Console</button>
+        </div>
+    </header>
 
-        <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full flex-1 space-y-6">
-            <!-- Admin Tabs Navigation -->
-            <div class="flex items-center space-x-3 border-b border-slate-800 pb-3">
-                <button id="admin-tab-deposits-btn" class="bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple">
-                    <i class="fa-solid fa-receipt mr-1.5"></i> Deposits Audit Queue
-                </button>
-                <button id="admin-tab-users-btn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition">
-                    <i class="fa-solid fa-users mr-1.5"></i> User Details Directory
-                </button>
-            </div>
+    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto w-full flex-1 space-y-6">
+        <!-- Admin Tabs Navigation -->
+        <div class="flex items-center space-x-3 border-b border-slate-800 pb-3">
+            <button id="admin-tab-deposits-btn" class="bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple">
+                <i class="fa-solid fa-receipt mr-1.5"></i> Deposits Audit Queue
+            </button>
+            <button id="admin-tab-users-btn" class="bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition">
+                <i class="fa-solid fa-users mr-1.5"></i> User Details Directory
+            </button>
+        </div>
 
-            <!-- Section 1: Deposits Audit -->
-            <div id="adminDepositsSection" class="space-y-4">
-                <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">Pending Clearance Reports</h3>
-                <div class="glass-panel rounded-2xl overflow-hidden shadow-glow-purple border-purple-500/20">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800">
-                                <tr>
-                                    <th class="p-3 sm:p-4">User Email</th>
-                                    <th class="p-3 sm:p-4">Current Bal</th>
-                                    <th class="p-3 sm:p-4">Deposit Value</th>
-                                    <th class="p-3 sm:p-4">UTR Reference</th>
-                                    <th class="p-3 sm:p-4 text-right">Verification Triggers</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminPipelineStream" class="text-xs font-mono divide-y divide-slate-800/60">
-                                <tr>
-                                    <td colspan="5" class="p-12 text-center text-slate-600 italic font-mono">No clearance pipeline metrics captured inside system database.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+        <!-- Section 1: Deposits Audit -->
+        <div id="adminDepositsSection" class="space-y-4">
+            <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">Pending Clearance Reports</h3>
+            <div class="glass-panel rounded-2xl overflow-hidden shadow-glow-purple border-purple-500/20">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800">
+                        <tr>
+                            <th class="p-3 sm:p-4">User Email</th>
+                            <th class="p-3 sm:p-4">Current Bal</th>
+                            <th class="p-3 sm:p-4">Deposit Value</th>
+                            <th class="p-3 sm:p-4">UTR Reference</th>
+                            <th class="p-3 sm:p-4 text-right">Verification Triggers</th>
+                        </tr>
+                        </thead>
+                        <tbody id="adminPipelineStream" class="text-xs font-mono divide-y divide-slate-800/60">
+                        <tr>
+                            <td colspan="5" class="p-12 text-center text-slate-600 italic font-mono">No clearance pipeline metrics captured inside system database.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Section 2: Registered Users Directory -->
+        <div id="adminUsersSection" class="space-y-4 hidden">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+                <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">User Email & Live Balances</h3>
+                <div class="relative w-full sm:w-72">
+                    <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
+                    <input type="text" id="adminUserSearchInput" placeholder="Filter by Email address or UID..." class="w-full bg-[#0d1220] pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
                 </div>
             </div>
 
-            <!-- Section 2: Registered Users Directory -->
-            <div id="adminUsersSection" class="space-y-4 hidden">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
-                    <h3 class="text-xs font-black tracking-widest text-purple-300 uppercase font-mono">User Email & Live Balances</h3>
-                    <div class="relative w-full sm:w-72">
-                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-500 text-xs"><i class="fa-solid fa-magnifying-glass"></i></span>
-                        <input type="text" id="adminUserSearchInput" placeholder="Filter by Email address or UID..." class="w-full bg-[#0d1220] pl-9 pr-3 py-2 rounded-xl border border-slate-800 text-xs text-slate-200 focus:outline-none focus:border-purple-500 font-mono">
-                    </div>
-                </div>
-
-                <div class="glass-panel rounded-2xl overflow-hidden border-purple-500/20">
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800">
-                                <tr>
-                                    <th class="p-3 sm:p-4">User Identifier & UID</th>
-                                    <th class="p-3 sm:p-4 text-center">Provider</th>
-                                    <th class="p-3 sm:p-4">Created</th>
-                                    <th class="p-3 sm:p-4">Last Active</th>
-                                    <th class="p-3 sm:p-4">Live Balance</th>
-                                    <th class="p-3 sm:p-4 text-right">Actions</th>
-                                </tr>
-                            </thead>
-                            <tbody id="adminUsersStream" class="text-xs font-mono divide-y divide-slate-800/60">
-                                <tr>
-                                    <td colspan="6" class="p-12 text-center text-slate-600 italic">Loading user directory...</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
+            <div class="glass-panel rounded-2xl overflow-hidden border-purple-500/20">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800">
+                        <tr>
+                            <th class="p-3 sm:p-4">User Identifier & UID</th>
+                            <th class="p-3 sm:p-4 text-center">Provider</th>
+                            <th class="p-3 sm:p-4">Created</th>
+                            <th class="p-3 sm:p-4">Last Active</th>
+                            <th class="p-3 sm:p-4">Live Balance</th>
+                            <th class="p-3 sm:p-4 text-right">Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody id="adminUsersStream" class="text-xs font-mono divide-y divide-slate-800/60">
+                        <tr>
+                            <td colspan="6" class="p-12 text-center text-slate-600 italic">Loading user directory...</td>
+                        </tr>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
     </div>
+</div>
 
-    <!-- Admin View User Data Modal -->
-    <div id="adminUserDetailModalOverlay" class="fixed inset-0 bg-[#030712]/95 z-[120] hidden items-center justify-center p-4 backdrop-blur-md">
-        <div class="glass-panel max-w-4xl w-full rounded-[32px] p-5 sm:p-7 space-y-5 relative max-h-[90vh] overflow-y-auto border-purple-500/30 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 sticky top-0 bg-[#0d1220]/90 backdrop-blur-md z-10 pt-1">
+<!-- Admin View User Data Modal -->
+<div id="adminUserDetailModalOverlay" class="fixed inset-0 bg-[#030712]/95 z-[120] hidden items-center justify-center p-4 backdrop-blur-md">
+    <div class="glass-panel max-w-4xl w-full rounded-[32px] p-5 sm:p-7 space-y-5 relative max-h-[90vh] overflow-y-auto border-purple-500/30 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800/80 pb-3 sticky top-0 bg-[#0d1220]/90 backdrop-blur-md z-10 pt-1">
+            <div>
+                <h3 class="text-sm sm:text-base font-black uppercase text-purple-300 tracking-wider flex items-center space-x-2">
+                    <i class="fa-solid fa-user-gear text-purple-400"></i>
+                    <span>User Account Deep Audit</span>
+                </h3>
+                <p id="modalUserEmailTitle" class="text-xs font-mono text-slate-400 mt-0.5">Loading...</p>
+            </div>
+            <button type="button" onclick="window.closeAdminUserDetailModal()" class="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <!-- User Quick Metrics Cards -->
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
+            <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                <span class="text-[9px] uppercase text-slate-500 font-bold block">User UID</span>
+                <span id="modalUserUID" class="text-amber-400 font-extrabold text-sm">#----</span>
+            </div>
+            <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                <span class="text-[9px] uppercase text-slate-500 font-bold block">Wallet Balance</span>
+                <span id="modalUserWallet" class="text-emerald-400 font-extrabold text-sm">₹0.00</span>
+            </div>
+            <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                <span class="text-[9px] uppercase text-slate-500 font-bold block">Auth Provider</span>
+                <span id="modalUserProvider" class="text-sky-400 font-bold">Mobile</span>
+            </div>
+            <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
+                <span class="text-[9px] uppercase text-slate-500 font-bold block">Qualified Refers</span>
+                <span id="modalUserRefers" class="text-purple-400 font-bold">0</span>
+            </div>
+        </div>
+
+        <!-- User Orders Logs -->
+        <div class="space-y-3">
+            <h4 class="text-xs font-black uppercase text-slate-300 font-mono flex items-center space-x-2">
+                <i class="fa-solid fa-box-archive text-sky-400"></i>
+                <span>Submitted Orders History</span>
+            </h4>
+            <div class="glass-panel rounded-2xl overflow-hidden border-slate-800">
+                <div class="overflow-x-auto max-h-60 overflow-y-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800 sticky top-0">
+                        <tr>
+                            <th class="p-2.5">Order ID</th>
+                            <th class="p-2.5">Service</th>
+                            <th class="p-2.5">Qty</th>
+                            <th class="p-2.5">Cost</th>
+                            <th class="p-2.5">Target Link</th>
+                            <th class="p-2.5">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="modalUserOrdersStream" class="text-xs font-mono divide-y divide-slate-800/60">
+                        <tr>
+                            <td colspan="6" class="p-6 text-center text-slate-500 italic">No orders logged for this user.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- User Transactions Logs -->
+        <div class="space-y-3 pt-2">
+            <h4 class="text-xs font-black uppercase text-slate-300 font-mono flex items-center space-x-2">
+                <i class="fa-solid fa-receipt text-emerald-400"></i>
+                <span>Wallet Deposit Requests</span>
+            </h4>
+            <div class="glass-panel rounded-2xl overflow-hidden border-slate-800">
+                <div class="overflow-x-auto max-h-48 overflow-y-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800 sticky top-0">
+                        <tr>
+                            <th class="p-2.5">Amount</th>
+                            <th class="p-2.5">UTR Reference</th>
+                            <th class="p-2.5">Status</th>
+                        </tr>
+                        </thead>
+                        <tbody id="modalUserTxStream" class="text-xs font-mono divide-y divide-slate-800/60">
+                        <tr>
+                            <td colspan="3" class="p-6 text-center text-slate-500 italic">No deposit records found.</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="pt-2 border-t border-slate-800 flex justify-end">
+            <button type="button" onclick="window.closeAdminUserDetailModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 rounded-xl transition">Close Audit Window</button>
+        </div>
+    </div>
+</div>
+
+<!-- Confirm Delete User Custom Modal -->
+<div id="deleteUserModalOverlay" class="fixed inset-0 bg-[#030712]/90 z-[60] hidden items-center justify-center p-4 backdrop-blur-md">
+    <div class="glass-panel max-w-md w-full rounded-[28px] p-6 space-y-4 border-rose-500/30 shadow-2xl relative">
+        <div class="flex items-center space-x-3 text-rose-500">
+            <i class="fa-solid fa-triangle-exclamation text-2xl animate-bounce"></i>
+            <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Confirm Permanent Deletion</h3>
+        </div>
+        <p class="text-xs text-slate-300 font-mono leading-relaxed">
+            Are you sure you want to permanently delete user <span id="deleteTargetUserEmail" class="text-rose-400 font-bold"></span> from Firebase Realtime Database?
+        </p>
+        <p class="text-[10px] text-slate-500 font-mono">This action will erase all wallet balance and account data permanently.</p>
+        <div class="flex justify-end space-x-3 pt-3 border-t border-slate-800">
+            <button id="cancelDeleteUserBtn" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-300 rounded-xl transition">Cancel</button>
+            <button id="confirmDeleteUserBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white uppercase tracking-wider rounded-xl transition shadow-glow-rose">Yes, Remove User</button>
+        </div>
+    </div>
+</div>
+
+<!-- SGS AI Support Desk Widget -->
+<div class="fixed bottom-24 lg:bottom-6 right-4 sm:right-6 z-40">
+    <button id="aiWidgetToggle" class="bg-gradient-to-tr from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-glow-rose flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 relative group focus:outline-none">
+        <span class="absolute -top-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-[#030712] animate-pulse"></span>
+        <i class="fa-solid fa-headset text-lg sm:text-xl group-hover:rotate-12 transition"></i>
+    </button>
+
+    <div id="aiSupportWidget" class="hidden absolute bottom-16 sm:bottom-18 right-0 w-80 sm:w-96 max-w-[calc(100vw-2rem)] h-[440px] sm:h-[500px] glass-panel rounded-[28px] shadow-glow-purple flex-col overflow-hidden transition-all duration-300 z-50">
+        <div class="bg-[#0d1220] p-4 border-b border-slate-800/80 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-8.5 h-8.5 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-center text-rose-400 font-bold text-sm">
+                    <i class="fa-solid fa-robot animate-pulse"></i>
+                </div>
                 <div>
-                    <h3 class="text-sm sm:text-base font-black uppercase text-purple-300 tracking-wider flex items-center space-x-2">
-                        <i class="fa-solid fa-user-gear text-purple-400"></i>
-                        <span>User Account Deep Audit</span>
-                    </h3>
-                    <p id="modalUserEmailTitle" class="text-xs font-mono text-slate-400 mt-0.5">Loading...</p>
-                </div>
-                <button type="button" onclick="window.closeAdminUserDetailModal()" class="text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
-                    <i class="fa-solid fa-xmark text-lg"></i>
-                </button>
-            </div>
-
-            <!-- User Quick Metrics Cards -->
-            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3 font-mono text-xs">
-                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
-                    <span class="text-[9px] uppercase text-slate-500 font-bold block">User UID</span>
-                    <span id="modalUserUID" class="text-amber-400 font-extrabold text-sm">#----</span>
-                </div>
-                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
-                    <span class="text-[9px] uppercase text-slate-500 font-bold block">Wallet Balance</span>
-                    <span id="modalUserWallet" class="text-emerald-400 font-extrabold text-sm">₹0.00</span>
-                </div>
-                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
-                    <span class="text-[9px] uppercase text-slate-500 font-bold block">Auth Provider</span>
-                    <span id="modalUserProvider" class="text-sky-400 font-bold">Email</span>
-                </div>
-                <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
-                    <span class="text-[9px] uppercase text-slate-500 font-bold block">Qualified Refers</span>
-                    <span id="modalUserRefers" class="text-purple-400 font-bold">0</span>
-                </div>
-            </div>
-
-            <!-- User Orders Logs -->
-            <div class="space-y-3">
-                <h4 class="text-xs font-black uppercase text-slate-300 font-mono flex items-center space-x-2">
-                    <i class="fa-solid fa-box-archive text-sky-400"></i>
-                    <span>Submitted Orders History</span>
-                </h4>
-                <div class="glass-panel rounded-2xl overflow-hidden border-slate-800">
-                    <div class="overflow-x-auto max-h-60 overflow-y-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800 sticky top-0">
-                                <tr>
-                                    <th class="p-2.5">Order ID</th>
-                                    <th class="p-2.5">Service</th>
-                                    <th class="p-2.5">Qty</th>
-                                    <th class="p-2.5">Cost</th>
-                                    <th class="p-2.5">Target Link</th>
-                                    <th class="p-2.5">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalUserOrdersStream" class="text-xs font-mono divide-y divide-slate-800/60">
-                                <tr>
-                                    <td colspan="6" class="p-6 text-center text-slate-500 italic">No orders logged for this user.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <!-- User Transactions Logs -->
-            <div class="space-y-3 pt-2">
-                <h4 class="text-xs font-black uppercase text-slate-300 font-mono flex items-center space-x-2">
-                    <i class="fa-solid fa-receipt text-emerald-400"></i>
-                    <span>Wallet Deposit Requests</span>
-                </h4>
-                <div class="glass-panel rounded-2xl overflow-hidden border-slate-800">
-                    <div class="overflow-x-auto max-h-48 overflow-y-auto">
-                        <table class="w-full text-left border-collapse">
-                            <thead class="bg-[#0d1220] text-slate-400 uppercase font-mono text-[9px] border-b border-slate-800 sticky top-0">
-                                <tr>
-                                    <th class="p-2.5">Amount</th>
-                                    <th class="p-2.5">UTR Reference</th>
-                                    <th class="p-2.5">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="modalUserTxStream" class="text-xs font-mono divide-y divide-slate-800/60">
-                                <tr>
-                                    <td colspan="3" class="p-6 text-center text-slate-500 italic">No deposit records found.</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            <div class="pt-2 border-t border-slate-800 flex justify-end">
-                <button type="button" onclick="window.closeAdminUserDetailModal()" class="px-5 py-2 bg-slate-800 hover:bg-slate-700 text-xs font-bold text-slate-300 rounded-xl transition">Close Audit Window</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- Confirm Delete User Custom Modal -->
-    <div id="deleteUserModalOverlay" class="fixed inset-0 bg-[#030712]/90 z-[60] hidden items-center justify-center p-4 backdrop-blur-md">
-        <div class="glass-panel max-w-md w-full rounded-[28px] p-6 space-y-4 border-rose-500/30 shadow-2xl relative">
-            <div class="flex items-center space-x-3 text-rose-500">
-                <i class="fa-solid fa-triangle-exclamation text-2xl animate-bounce"></i>
-                <h3 class="text-base font-extrabold uppercase tracking-wider text-white">Confirm Permanent Deletion</h3>
-            </div>
-            <p class="text-xs text-slate-300 font-mono leading-relaxed">
-                Are you sure you want to permanently delete user <span id="deleteTargetUserEmail" class="text-rose-400 font-bold"></span> from Firebase Realtime Database?
-            </p>
-            <p class="text-[10px] text-slate-500 font-mono">This action will erase all wallet balance and account data permanently.</p>
-            <div class="flex justify-end space-x-3 pt-3 border-t border-slate-800">
-                <button id="cancelDeleteUserBtn" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-bold text-slate-300 rounded-xl transition">Cancel</button>
-                <button id="confirmDeleteUserBtn" class="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-xs font-bold text-white uppercase tracking-wider rounded-xl transition shadow-glow-rose">Yes, Remove User</button>
-            </div>
-        </div>
-    </div>
-
-    <!-- SGS AI Support Desk Widget -->
-    <div class="fixed bottom-24 lg:bottom-6 right-4 sm:right-6 z-40">
-        <button id="aiWidgetToggle" class="bg-gradient-to-tr from-rose-600 to-purple-600 hover:from-rose-500 hover:to-purple-500 text-white w-12 h-12 sm:w-14 sm:h-14 rounded-full shadow-glow-rose flex items-center justify-center transition-all duration-300 hover:scale-105 active:scale-95 relative group focus:outline-none">
-            <span class="absolute -top-0.5 -right-0.5 h-3 w-3 bg-emerald-500 rounded-full border-2 border-[#030712] animate-pulse"></span>
-            <i class="fa-solid fa-headset text-lg sm:text-xl group-hover:rotate-12 transition"></i>
-        </button>
-
-        <div id="aiSupportWidget" class="hidden absolute bottom-16 sm:bottom-18 right-0 w-80 sm:w-96 max-w-[calc(100vw-2rem)] h-[440px] sm:h-[500px] glass-panel rounded-[28px] shadow-glow-purple flex-col overflow-hidden transition-all duration-300 z-50">
-            <div class="bg-[#0d1220] p-4 border-b border-slate-800/80 flex items-center justify-between">
-                <div class="flex items-center space-x-3">
-                    <div class="w-8.5 h-8.5 bg-rose-500/10 border border-rose-500/20 rounded-xl flex items-center justify-center text-rose-400 font-bold text-sm">
-                        <i class="fa-solid fa-robot animate-pulse"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-xs font-bold text-white tracking-wide">SGS AI Support Assistant</h4>
-                        <span class="text-[8px] text-emerald-400 font-mono flex items-center gap-1">
+                    <h4 class="text-xs font-bold text-white tracking-wide">SGS AI Support Assistant</h4>
+                    <span class="text-[8px] text-emerald-400 font-mono flex items-center gap-1">
                             <span class="h-1 w-1 bg-emerald-400 rounded-full animate-ping"></span>
                             Online SLA Secured
                         </span>
-                    </div>
-                </div>
-                <button id="ai-widget-close-btn" class="text-slate-400 hover:text-slate-200 text-sm p-1.5 hover:bg-slate-900 rounded-lg transition"><i class="fa-solid fa-chevron-down text-xs"></i></button>
-            </div>
-
-            <div id="aiMessagesStream" class="flex-1 p-4 overflow-y-auto space-y-4 text-[11px] sm:text-xs font-mono bg-[#030712]/50">
-                <div class="flex items-start space-x-2.5">
-                    <div class="w-6 h-6 bg-rose-500/10 rounded-lg flex items-center justify-center text-rose-400 text-[9px] shrink-0 font-bold">AI</div>
-                    <div class="bg-[#0d1220]/80 border border-slate-800/40 p-3 rounded-2xl rounded-tl-none max-w-[80%] text-slate-300 leading-relaxed">
-                        Secure hello connection! I am <span class="text-rose-400 font-bold">SGS AI</span>. How can I assist you with SMM dispatches, balance settlement reports, or system validations today?
-                    </div>
                 </div>
             </div>
+            <button id="ai-widget-close-btn" class="text-slate-400 hover:text-slate-200 text-sm p-1.5 hover:bg-slate-900 rounded-lg transition"><i class="fa-solid fa-chevron-down text-xs"></i></button>
+        </div>
 
-            <div class="p-2.5 bg-[#0d1220] border-t border-slate-800/80 flex items-center gap-2">
-                <input type="text" id="aiUserInput" placeholder="Type support question..." class="flex-1 bg-[#030712] border border-slate-800 focus:outline-none focus:border-rose-500 rounded-xl px-3 py-2.5 text-xs text-slate-200 placeholder:text-slate-600 font-mono">
-                <button id="ai-send-btn" class="w-9 h-9 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center justify-center transition shrink-0 active:scale-95">
-                    <i class="fa-solid fa-paper-plane text-[11px]"></i>
-                </button>
+        <div id="aiMessagesStream" class="flex-1 p-4 overflow-y-auto space-y-4 text-[11px] sm:text-xs font-mono bg-[#030712]/50">
+            <div class="flex items-start space-x-2.5">
+                <div class="w-6 h-6 bg-rose-500/10 rounded-lg flex items-center justify-center text-rose-400 text-[9px] shrink-0 font-bold">AI</div>
+                <div class="bg-[#0d1220]/80 border border-slate-800/40 p-3 rounded-2xl rounded-tl-none max-w-[80%] text-slate-300 leading-relaxed">
+                    Secure hello connection! I am <span class="text-rose-400 font-bold">SGS AI</span>. How can I assist you with SMM dispatches, balance settlement reports, or system validations today?
+                </div>
             </div>
         </div>
-    </div>
 
-    <!-- Dynamic Policy Modal Overlay -->
-    <div id="legalModalOverlay" class="fixed inset-0 bg-[#030712]/90 z-[100] hidden items-center justify-center p-4 backdrop-blur-md">
-        <div class="glass-panel max-w-2xl w-full rounded-[32px] p-5 sm:p-7 space-y-5 relative max-h-[85vh] overflow-y-auto border-slate-800/80 shadow-2xl">
-            <div class="flex items-center justify-between border-b border-slate-800/60 pb-3 sticky top-0 bg-[#0d1220]/90 backdrop-blur-md z-10 pt-1">
-                <h3 id="legalModalTitle" class="text-sm sm:text-base font-black uppercase text-white tracking-wider flex items-center space-x-2"></h3>
-                <button id="legal-close-btn" class="text-slate-400 hover:text-rose-500 p-1 hover:bg-slate-900 rounded-lg transition"><i class="fa-solid fa-xmark text-lg"></i></button>
-            </div>
-            <div id="legalModalContent" class="text-xs text-slate-300 leading-relaxed space-y-4 font-sans">
-            </div>
-            <div class="pt-3 border-t border-slate-800/60 flex justify-end sticky bottom-0 bg-[#0d1220]/90 backdrop-blur-md pb-1">
-                <button id="legal-acknowledge-btn" class="px-5 py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-[10px] font-bold text-white uppercase tracking-widest rounded-xl transition shadow-md">Acknowledge & Accept</button>
-            </div>
+        <div class="p-2.5 bg-[#0d1220] border-t border-slate-800/80 flex items-center gap-2">
+            <input type="text" id="aiUserInput" placeholder="Type support question..." class="flex-1 bg-[#030712] border border-slate-800 focus:outline-none focus:border-rose-500 rounded-xl px-3 py-2.5 text-xs text-slate-200 placeholder:text-slate-600 font-mono">
+            <button id="ai-send-btn" class="w-9 h-9 bg-rose-600 hover:bg-rose-500 text-white rounded-xl flex items-center justify-center transition shrink-0 active:scale-95">
+                <i class="fa-solid fa-paper-plane text-[11px]"></i>
+            </button>
         </div>
     </div>
+</div>
 
-    <!-- LINKING POSTS.JS -->
-    <script type="module" src="posts.js"></script>
+<!-- Dynamic Policy Modal Overlay -->
+<div id="legalModalOverlay" class="fixed inset-0 bg-[#030712]/90 z-[100] hidden items-center justify-center p-4 backdrop-blur-md">
+    <div class="glass-panel max-w-2xl w-full rounded-[32px] p-5 sm:p-7 space-y-5 relative max-h-[85vh] overflow-y-auto border-slate-800/80 shadow-2xl">
+        <div class="flex items-center justify-between border-b border-slate-800/60 pb-3 sticky top-0 bg-[#0d1220]/90 backdrop-blur-md z-10 pt-1">
+            <h3 id="legalModalTitle" class="text-sm sm:text-base font-black uppercase text-white tracking-wider flex items-center space-x-2"></h3>
+            <button id="legal-close-btn" class="text-slate-400 hover:text-rose-500 p-1 hover:bg-slate-900 rounded-lg transition"><i class="fa-solid fa-xmark text-lg"></i></button>
+        </div>
+        <div id="legalModalContent" class="text-xs text-slate-300 leading-relaxed space-y-4 font-sans">
+        </div>
+        <div class="pt-3 border-t border-slate-800/60 flex justify-end sticky bottom-0 bg-[#0d1220]/90 backdrop-blur-md pb-1">
+            <button id="legal-acknowledge-btn" class="px-5 py-2 bg-gradient-to-r from-rose-600 to-amber-600 hover:from-rose-500 hover:to-amber-500 text-[10px] font-bold text-white uppercase tracking-widest rounded-xl transition shadow-md">Acknowledge & Accept</button>
+        </div>
+    </div>
+</div>
+
+<!-- Complete Embedded Policy Engine & WhatsApp Router -->
+<script>
+    (function () {
+        const policies = {
+            privacy: {
+                title: '<i class="fa-solid fa-shield-halved text-emerald-400"></i><span>Privacy Policy & Data Security</span>',
+                html: `
+                    <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                        <div class="bg-emerald-500/10 border border-emerald-500/20 p-3 rounded-2xl text-emerald-300 text-[11px] font-mono">
+                            <strong>Google Play Developer Policy Standard:</strong> Fully Compliant with User Data Protection, Transparent Access, and Encryption Mandates.
+                        </div>
+                        <p><strong>Last Updated:</strong> August 2026</p>
+                        <p>Welcome to <strong>SGS Instaboost</strong> (managed by Sachin Kumar, Ara, Bhojpur, Bihar - 802165). We respect your privacy and are committed to safeguarding the personal data you share with us.</p>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">1. Data We Access & Collect</h4>
+                        <p>When you access or authenticate with SGS Instaboost, we collect minimal data essential to deliver automated digital services:</p>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-400 font-mono text-[11px]">
+                            <li><strong>Identity & Account Info:</strong> Mobile Number, Email Address, and UID provided securely upon verification.</li>
+                            <li><strong>Profile & Verification Data:</strong> User account balances, transaction references (UPI sender name/UTR), and unique referral identifiers.</li>
+                            <li><strong>Service Dispatches:</strong> Destination links and numerical quantities requested for processing.</li>
+                            <li><strong>Technical Diagnostics:</strong> Device network state and error logs solely used for latency optimization and security verification.</li>
+                        </ul>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">2. Purpose of Data Utilization</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-400 font-mono text-[11px]">
+                            <li>To authenticate identity and maintain persistent, tamper-proof user sessions.</li>
+                            <li>To track orders, calculate dynamic balances, and credit referral rewards.</li>
+                            <li>To deliver round-the-clock customer support and fraud prevention.</li>
+                        </ul>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">3. Ironclad Security & Zero Third-Party Sale</h4>
+                        <p>We do <strong>NOT</strong> sell, rent, monetize, or disclose your personal data to external advertisers. All transmissions are protected with industry-standard <strong>256-bit SSL / AES TLS encryption</strong> directly synced to Google Firebase infrastructure.</p>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">4. Account & Data Deletion Compliance</h4>
+                        <p>In accordance with Google Play's Account Deletion Policy, any user may request complete purging of their account and associated data. Email our verification officer at <span class="text-rose-400 font-mono font-bold">contactsgsinstaboost@gmail.com</span> with subject <em>"Delete My Account"</em>, and your records will be irreversibly erased within 7 business days.</p>
+                    </div>
+                `
+            },
+            terms: {
+                title: '<i class="fa-solid fa-file-contract text-amber-400"></i><span>Terms of Agreement</span>',
+                html: `
+                    <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                        <p><strong>Last Updated:</strong> August 2026</p>
+                        <p>By creating an account or accessing the SGS Instaboost platform, you acknowledge and agree to the following terms and operating conditions:</p>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">1. Account Integrity</h4>
+                        <p>Users are solely responsible for maintaining the confidentiality of their credentials and session tokens. Multiple account abuse or automated bot exploitation will lead to immediate account suspension.</p>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">2. Usage Rules</h4>
+                        <p>You agree not to submit fraudulent UPI references, submit malicious links, or attempt unauthorized reverse engineering of backend dispatch APIs.</p>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">3. Service Modifications</h4>
+                        <p>Platform rates, server packages, and execution speeds are dynamic and subject to updates based on underlying node availability.</p>
+                    </div>
+                `
+            },
+            refund: {
+                title: '<i class="fa-solid fa-arrow-rotate-left text-amber-400"></i><span>Refund & Settlement Policy</span>',
+                html: `
+                    <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                        <p>We aim for 100% transparency in our automated billing and wallet settlement processes.</p>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">1. Order Executions</h4>
+                        <p>Once a service pipeline dispatch is initialized to the designated link, the action cannot be revoked or canceled mid-flight.</p>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">2. Refund Eligibility</h4>
+                        <ul class="list-disc pl-5 space-y-1 text-slate-400 font-mono text-[11px]">
+                            <li><strong>Failed System Nodes:</strong> If a dispatch completely fails due to server error, the full deduction is credited back to your account wallet automatically.</li>
+                            <li><strong>Duplicate Deposits:</strong> If a UPI deposit is deducted twice due to banking gateway latency, the excess amount is reconciled within 24-48 hours upon verification.</li>
+                        </ul>
+
+                        <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">3. Resolution Request</h4>
+                        <p>Submit your order ID or payment UTR to our official support email or WhatsApp channel for rapid review.</p>
+                    </div>
+                `
+            },
+            faq: {
+                title: '<i class="fa-solid fa-circle-question text-sky-400"></i><span>Frequently Asked Questions</span>',
+                html: `
+                    <div class="space-y-3 text-xs text-slate-300">
+                        <div class="bg-[#0d1220] p-3.5 rounded-2xl border border-slate-800">
+                            <p class="font-bold text-white text-xs mb-1">Q: How do I access 24/7 technical support?</p>
+                            <p class="text-slate-400 text-[11px]">A: You can open the Contact Us section or click the WhatsApp support button to reach our active support desk instantly at any time.</p>
+                        </div>
+                        <div class="bg-[#0d1220] p-3.5 rounded-2xl border border-slate-800">
+                            <p class="font-bold text-white text-xs mb-1">Q: How does the affiliate referral system credit funds?</p>
+                            <p class="text-slate-400 text-[11px]">A: When a referee joins via your node link/code and successfully completes their first wallet deposit, a random reward between ₹1.00 to ₹2.00 is credited straight to your balance.</p>
+                        </div>
+                        <div class="bg-[#0d1220] p-3.5 rounded-2xl border border-slate-800">
+                            <p class="font-bold text-white text-xs mb-1">Q: Is my login account information safe?</p>
+                            <p class="text-slate-400 text-[11px]">A: Yes. All user data is secured with end-to-end database security rules and encrypted endpoints.</p>
+                        </div>
+                    </div>
+                `
+            },
+            about: {
+                title: '<i class="fa-solid fa-address-card text-purple-400"></i><span>About Developer & Organization</span>',
+                html: `
+                    <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                        <p><strong>SGS Instaboost</strong> is a specialized, high-performance social utility and digital engine designed for seamless platform management and instant automated order pipelines.</p>
+
+                        <div class="bg-[#0d1220] p-4 rounded-2xl border border-slate-800 space-y-2">
+                            <h4 class="text-xs font-black uppercase text-rose-400 font-mono tracking-wider">Entity Verification</h4>
+                            <p><strong>Lead Architect & Developer:</strong> Sachin Kumar</p>
+                            <p><strong>Operating Region:</strong> Ara, Bhojpur, Bihar, PIN - 802165, India</p>
+                            <p><strong>Primary Operations:</strong> SGS Instaboost Technology & SMM Architecture</p>
+                            <p><strong>Platform Status:</strong> Verified Active Production Instance</p>
+                        </div>
+                    </div>
+                `
+            },
+            contact: {
+                title: '<i class="fa-brands fa-whatsapp text-emerald-400"></i><span>Official 24/7 Support Desk</span>',
+                html: `
+                    <div class="space-y-4 text-xs text-slate-300 leading-relaxed">
+                        <p>Need urgent assistance with order status, API keys, or manual wallet top-up validation? Reach out through our official lines:</p>
+
+                        <div class="bg-[#0d1220] p-4 rounded-2xl border border-slate-800 space-y-3">
+                            <div>
+                                <span class="text-[10px] uppercase font-mono text-slate-500 block font-bold">Email Communication</span>
+                                <a href="mailto:contactsgsinstaboost@gmail.com" class="text-rose-400 hover:underline font-mono font-bold">contactsgsinstaboost@gmail.com</a>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase font-mono text-slate-500 block font-bold">Registered Office</span>
+                                <p class="text-slate-300 font-mono">Ara - Bhojpur, Bihar - 802165, India</p>
+                            </div>
+                            <div>
+                                <span class="text-[10px] uppercase font-mono text-slate-500 block font-bold">Service Availability</span>
+                                <span class="inline-flex items-center gap-1.5 text-emerald-400 font-mono text-[11px]">
+                                    <span class="h-2 w-2 rounded-full bg-emerald-500 animate-pulse"></span> 24/7/365 Direct Support Active
+                                </span>
+                            </div>
+
+                            <div class="pt-2">
+                                <a href="https://api.whatsapp.com/send?phone=919117080169&text=Hello%20Sachin,%20I%20need%20support%20regarding%20SGS%20Instaboost." target="_blank" class="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold uppercase tracking-wider text-xs rounded-xl flex items-center justify-center space-x-2 transition shadow-glow-emerald">
+                                    <i class="fa-brands fa-whatsapp text-lg"></i>
+                                    <span>Connect with 24/7 WhatsApp Support</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                `
+            }
+        };
+
+        function showLegalModal(type) {
+            const data = policies[type];
+            if (!data) return;
+            const modal = document.getElementById('legalModalOverlay');
+            const title = document.getElementById('legalModalTitle');
+            const content = document.getElementById('legalModalContent');
+            if (modal && title && content) {
+                title.innerHTML = data.title;
+                content.innerHTML = data.html;
+                modal.classList.remove('hidden');
+                modal.classList.add('flex');
+            }
+        }
+
+        function hideLegalModal() {
+            const modal = document.getElementById('legalModalOverlay');
+            if (modal) {
+                modal.classList.add('hidden');
+                modal.classList.remove('flex');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const closeBtn = document.getElementById('legal-close-btn');
+            const ackBtn = document.getElementById('legal-acknowledge-btn');
+            if (closeBtn) closeBtn.addEventListener('click', hideLegalModal);
+            if (ackBtn) ackBtn.addEventListener('click', hideLegalModal);
+
+            const mappings = [
+                { ids: ['btn-show-privacy', 'btn-show-privacy-login', 'btn-show-privacy-2', 'btn-show-privacy-3', 'btn-desktop-security'], type: 'privacy' },
+                { ids: ['btn-show-terms', 'btn-show-terms-login', 'btn-show-terms-2', 'btn-show-terms-3'], type: 'terms' },
+                { ids: ['btn-show-refund-login', 'drawer-refund-btn', 'btn-desktop-refund', 'btn-show-refund-3'], type: 'refund' },
+                { ids: ['btn-show-faq-login', 'drawer-faq-btn', 'btn-desktop-faq', 'btn-show-faq-3'], type: 'faq' },
+                { ids: ['btn-show-about-login', 'drawer-about-btn', 'btn-desktop-about', 'btn-show-about-3'], type: 'about' },
+                { ids: ['btn-show-contact-login', 'drawer-contact-btn', 'btn-desktop-contact', 'btn-show-contact-3'], type: 'contact' }
+            ];
+
+            mappings.forEach(map => {
+                map.ids.forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) {
+                        el.addEventListener('click', (e) => {
+                            e.preventDefault();
+                            showLegalModal(map.type);
+                        });
+                    }
+                });
+            });
+        });
+    })();
+</script>
+
+<!-- LINKING POSTS.JS -->
+<script type="module" src="posts.js"></script>
 </body>
 </html>
