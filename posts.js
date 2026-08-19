@@ -1335,18 +1335,34 @@ document.getElementById('drawer-logout-btn').addEventListener('click', window.ha
 document.getElementById('submit-deposit-btn').addEventListener('click', window.submitDepositToServer);
 document.getElementById('submit-order-pipeline-btn').addEventListener('click', window.executeSMMPipelineOrder);
 
-// 📱 FULL WORKING FIREBASE PHONE OTP DISPATCH & VERIFY LOGIC
+// 📱 FULL WORKING FIREBASE PHONE OTP DISPATCH & VERIFY LOGIC (RECAPTCHA FIXED)
 let confirmationResultGlobal = null;
 let otpCooldownTimer = 0;
 let otpInterval = null;
 
 window.initRecaptchaVerifier = function() {
-    if (!window.recaptchaVerifierInstance) {
-        window.recaptchaVerifierInstance = new RecaptchaVerifier('btn-send-otp', {
-            'size': 'invisible',
-            'callback': (response) => {}
-        }, auth);
+    if (window.recaptchaVerifierInstance) {
+        try {
+            window.recaptchaVerifierInstance.clear();
+        } catch (e) {}
+        window.recaptchaVerifierInstance = null;
     }
+
+    const container = document.getElementById('recaptcha-container') || 'btn-send-otp';
+    window.recaptchaVerifierInstance = new RecaptchaVerifier(container, {
+        'size': 'invisible',
+        'callback': (response) => {
+            // Invisible reCAPTCHA verification passed
+        },
+        'expired-callback': () => {
+            window.showCustomToast("reCAPTCHA expired. Please try sending OTP again.", "error");
+            if (window.recaptchaVerifierInstance) {
+                window.recaptchaVerifierInstance.render().then(widgetId => {
+                    if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
+                }).catch(() => {});
+            }
+        }
+    }, auth);
 };
 
 window.sendPhoneOtpDirect = async function() {
@@ -1396,18 +1412,22 @@ window.sendPhoneOtpDirect = async function() {
         console.error("SMS Dispatch Error:", error);
         let errorMsg = error.message;
         if (error.code === 'auth/quota-exceeded') {
-            errorMsg = "Daily SMS limit exceeded. Test number use karein ya quota badhayein!";
+            errorMsg = "Daily SMS limit (10 SMS) exceed ho chuki hai. Firebase Console me Test Phone Number add karein ya Blaze Plan upgrade karein!";
         } else if (error.code === 'auth/unauthorized-domain') {
-            errorMsg = "Domain authorized nahi hai Firebase Console me!";
+            errorMsg = "Domain authorized nahi hai Firebase Console -> Authentication -> Settings me!";
         } else if (error.code === 'auth/invalid-phone-number') {
-            errorMsg = "Mobile number galat hai!";
+            errorMsg = "Mobile number invalid hai!";
+        } else if (error.code === 'auth/captcha-check-failed') {
+            errorMsg = "reCAPTCHA verification fail ho gaya. Page refresh karke try karein!";
         }
         window.showCustomToast(errorMsg, "error");
 
         if (window.recaptchaVerifierInstance) {
-            window.recaptchaVerifierInstance.render().then(widgetId => {
-                if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
-            }).catch(() => {});
+            try {
+                window.recaptchaVerifierInstance.render().then(widgetId => {
+                    if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
+                }).catch(() => {});
+            } catch (e) {}
         }
         if (sendOtpBtn) {
             sendOtpBtn.disabled = false;
