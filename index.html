@@ -24,7 +24,7 @@
                     },
                     boxShadow: {
                         'glow-rose': '0 0 30px rgba(244, 63, 94, 0.25)',
-                        'glow-emerald': '0 0 30px rgba(160, 185, 129, 0.25)',
+                        'glow-emerald': '0 0 30px rgba(16, 185, 129, 0.25)',
                         'glow-purple': '0 0 30px rgba(168, 85, 247, 0.25)',
                         'glow-amber': '0 0 30px rgba(245, 158, 11, 0.25)',
                     }
@@ -106,9 +106,6 @@
 </head>
 <body class="text-[#f1f5f9] font-sans min-h-screen flex flex-col antialiased selection:bg-rose-500 selection:text-white pb-24 lg:pb-0">
 
-<!-- Invisible Recaptcha Container for Firebase Phone Auth -->
-<div id="recaptcha-container"></div>
-
 <!-- Global Fullscreen Data Loading Overlay -->
 <div id="globalLoadingScreen" class="fixed inset-0 bg-[#030712] z-[9999] flex flex-col items-center justify-center transition-opacity duration-300">
     <div class="relative flex items-center justify-center">
@@ -153,10 +150,10 @@
         <!-- Login Form view -->
         <div id="loginForm" class="space-y-4">
             <div>
-                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Mobile Number</label>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Mobile Number / Email</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-phone text-sm"></i></span>
-                    <input type="tel" id="loginMobile" placeholder="Enter 10-digit mobile number" maxlength="10" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500 font-mono">
+                    <input type="text" id="loginMobile" placeholder="Enter 10-digit mobile number or email" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500 font-mono">
                 </div>
             </div>
 
@@ -556,7 +553,7 @@
                             <h2 class="text-base sm:text-lg font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
                                 <i class="fa-solid fa-shield-halved"></i>
                                 <span>Wallet Settlement Clearance</span>
-                                </h2>
+                            </h2>
                             <p class="text-xs text-slate-400 font-mono mt-0.5">Initialize and settle transactions via instant UPI QR</p>
                         </div>
 
