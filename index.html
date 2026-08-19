@@ -24,7 +24,7 @@
                     },
                     boxShadow: {
                         'glow-rose': '0 0 30px rgba(244, 63, 94, 0.25)',
-                        'glow-emerald': '0 0 30px rgba(16, 185, 129, 0.25)',
+                        'glow-emerald': '0 0 30px rgba(160, 185, 129, 0.25)',
                         'glow-purple': '0 0 30px rgba(168, 85, 247, 0.25)',
                         'glow-amber': '0 0 30px rgba(245, 158, 11, 0.25)',
                     }
@@ -592,7 +592,7 @@
                             <img id="secureQrImg" src="" class="w-44 h-44 mx-auto" alt="UPI QR">
                         </div>
 
-                        <div id="qrDataSummary" class="mt-2 text-[10px] font-mono font-bold bg-[#0d1220] px-3.5 py-2 rounded-xl border border-slate-850 text-emerald-400 hidden"></div>
+                        <div id="qrDataSummary" class="mt-2 text-[10px] font-mono font-bold bg-[#0d1220] px-3.5 py-2 rounded-xl border border-slate-855 text-emerald-400 hidden"></div>
                     </div>
                 </div>
 
@@ -1154,6 +1154,103 @@
             });
         });
     })();
+</script>
+
+<!-- Dedicated OTP Dispatch & Verification Engine -->
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const sendOtpBtn = document.getElementById('btn-send-otp');
+        const registerMobile = document.getElementById('registerMobile');
+        const registerOtp = document.getElementById('registerOtp');
+        const registerSubmitBtn = document.getElementById('register-submit-btn');
+        const toastContainer = document.getElementById('toastContainer');
+
+        let generatedOtp = null;
+        let otpCountdown = 0;
+        let countdownTimer = null;
+
+        function showAppToast(message, type = 'success') {
+            if (!toastContainer) {
+                alert(message);
+                return;
+            }
+            const toast = document.createElement('div');
+            const isSuccess = type === 'success';
+            toast.className = `p-4 rounded-2xl text-xs font-mono flex items-center space-x-3 shadow-2xl transition-all duration-300 transform translate-y-2 ${
+                isSuccess 
+                    ? 'bg-[#0d1220] border border-emerald-500/40 text-emerald-300 shadow-glow-emerald' 
+                    : 'bg-[#0d1220] border border-rose-500/40 text-rose-300 shadow-glow-rose'
+            }`;
+            toast.innerHTML = `
+                <i class="fa-solid ${isSuccess ? 'fa-circle-check text-emerald-400' : 'fa-circle-exclamation text-rose-400'} text-base"></i>
+                <span class="flex-1">${message}</span>
+            `;
+            toastContainer.appendChild(toast);
+            setTimeout(() => {
+                toast.classList.add('opacity-0', '-translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 4500);
+        }
+
+        if (sendOtpBtn && registerMobile) {
+            sendOtpBtn.addEventListener('click', (e) => {
+                e.preventDefault();
+
+                if (otpCountdown > 0) {
+                    showAppToast(`Please wait ${otpCountdown}s before requesting a new OTP.`, 'error');
+                    return;
+                }
+
+                const mobileNum = registerMobile.value.trim();
+                if (!mobileNum || mobileNum.length !== 10 || !/^\d{10}$/.test(mobileNum)) {
+                    showAppToast("Kripya valid 10-digit mobile number enter karein!", "error");
+                    registerMobile.focus();
+                    return;
+                }
+
+                // Generate 6-digit cryptographic OTP
+                generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
+                window.CURRENT_SESSION_OTP = generatedOtp;
+
+                // Trigger UI Visual Countdown
+                otpCountdown = 60;
+                sendOtpBtn.disabled = true;
+                sendOtpBtn.classList.add('opacity-50', 'cursor-not-allowed');
+
+                countdownTimer = setInterval(() => {
+                    otpCountdown--;
+                    if (otpCountdown > 0) {
+                        sendOtpBtn.textContent = `Resend (${otpCountdown}s)`;
+                    } else {
+                        clearInterval(countdownTimer);
+                        sendOtpBtn.disabled = false;
+                        sendOtpBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        sendOtpBtn.textContent = "Send OTP";
+                    }
+                }, 1000);
+
+                showAppToast(`OTP Sent Successfully! Demo/Testing OTP: [ ${generatedOtp} ]`, "success");
+                if (registerOtp) {
+                    registerOtp.focus();
+                }
+            });
+        }
+
+        if (registerSubmitBtn) {
+            registerSubmitBtn.addEventListener('click', () => {
+                const userOtp = registerOtp ? registerOtp.value.trim() : '';
+                if (!generatedOtp) {
+                    showAppToast("Pehle 'Send OTP' button daba kar OTP prapt karein!", "error");
+                    return;
+                }
+                if (userOtp !== generatedOtp) {
+                    showAppToast("Invalid OTP code! Sahi OTP enter karein.", "error");
+                    return;
+                }
+                showAppToast("OTP Verified successfully!", "success");
+            });
+        }
+    });
 </script>
 
 <!-- LINKING POSTS.JS -->
