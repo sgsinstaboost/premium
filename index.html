@@ -106,6 +106,9 @@
 </head>
 <body class="text-[#f1f5f9] font-sans min-h-screen flex flex-col antialiased selection:bg-rose-500 selection:text-white pb-24 lg:pb-0">
 
+<!-- Invisible Recaptcha Container for Firebase Phone Auth -->
+<div id="recaptcha-container"></div>
+
 <!-- Global Fullscreen Data Loading Overlay -->
 <div id="globalLoadingScreen" class="fixed inset-0 bg-[#030712] z-[9999] flex flex-col items-center justify-center transition-opacity duration-300">
     <div class="relative flex items-center justify-center">
@@ -245,7 +248,7 @@
             </div>
 
             <div class="text-[11px] text-slate-400 leading-relaxed bg-[#0d1220]/85 p-3 rounded-xl border border-slate-850 flex items-start space-x-2">
-                <input type="checkbox" id="agree-terms" checked class="mt-0.5 rounded bg-slate-900 border-slate-850 text-rose-500 focus:ring-rose-500">
+                <input type="checkbox" id="agree-terms" checked class="mt-0.5 rounded bg-slate-900 border-slate-855 text-rose-500 focus:ring-rose-500">
                 <label for="agree-terms">I authorize the secure <span class="text-rose-400 cursor-pointer underline" id="btn-show-privacy">Privacy Mandate</span> and <span class="text-rose-400 cursor-pointer underline" id="btn-show-terms">Terms of Agreement</span>.</label>
             </div>
 
@@ -553,7 +556,7 @@
                             <h2 class="text-base sm:text-lg font-bold text-emerald-400 uppercase tracking-wider flex items-center space-x-2">
                                 <i class="fa-solid fa-shield-halved"></i>
                                 <span>Wallet Settlement Clearance</span>
-                            </h2>
+                                </h2>
                             <p class="text-xs text-slate-400 font-mono mt-0.5">Initialize and settle transactions via instant UPI QR</p>
                         </div>
 
@@ -1154,103 +1157,6 @@
             });
         });
     })();
-</script>
-
-<!-- Dedicated OTP Dispatch & Verification Engine -->
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const sendOtpBtn = document.getElementById('btn-send-otp');
-        const registerMobile = document.getElementById('registerMobile');
-        const registerOtp = document.getElementById('registerOtp');
-        const registerSubmitBtn = document.getElementById('register-submit-btn');
-        const toastContainer = document.getElementById('toastContainer');
-
-        let generatedOtp = null;
-        let otpCountdown = 0;
-        let countdownTimer = null;
-
-        function showAppToast(message, type = 'success') {
-            if (!toastContainer) {
-                alert(message);
-                return;
-            }
-            const toast = document.createElement('div');
-            const isSuccess = type === 'success';
-            toast.className = `p-4 rounded-2xl text-xs font-mono flex items-center space-x-3 shadow-2xl transition-all duration-300 transform translate-y-2 ${
-                isSuccess 
-                    ? 'bg-[#0d1220] border border-emerald-500/40 text-emerald-300 shadow-glow-emerald' 
-                    : 'bg-[#0d1220] border border-rose-500/40 text-rose-300 shadow-glow-rose'
-            }`;
-            toast.innerHTML = `
-                <i class="fa-solid ${isSuccess ? 'fa-circle-check text-emerald-400' : 'fa-circle-exclamation text-rose-400'} text-base"></i>
-                <span class="flex-1">${message}</span>
-            `;
-            toastContainer.appendChild(toast);
-            setTimeout(() => {
-                toast.classList.add('opacity-0', '-translate-y-2');
-                setTimeout(() => toast.remove(), 300);
-            }, 4500);
-        }
-
-        if (sendOtpBtn && registerMobile) {
-            sendOtpBtn.addEventListener('click', (e) => {
-                e.preventDefault();
-
-                if (otpCountdown > 0) {
-                    showAppToast(`Please wait ${otpCountdown}s before requesting a new OTP.`, 'error');
-                    return;
-                }
-
-                const mobileNum = registerMobile.value.trim();
-                if (!mobileNum || mobileNum.length !== 10 || !/^\d{10}$/.test(mobileNum)) {
-                    showAppToast("Kripya valid 10-digit mobile number enter karein!", "error");
-                    registerMobile.focus();
-                    return;
-                }
-
-                // Generate 6-digit cryptographic OTP
-                generatedOtp = Math.floor(100000 + Math.random() * 900000).toString();
-                window.CURRENT_SESSION_OTP = generatedOtp;
-
-                // Trigger UI Visual Countdown
-                otpCountdown = 60;
-                sendOtpBtn.disabled = true;
-                sendOtpBtn.classList.add('opacity-50', 'cursor-not-allowed');
-
-                countdownTimer = setInterval(() => {
-                    otpCountdown--;
-                    if (otpCountdown > 0) {
-                        sendOtpBtn.textContent = `Resend (${otpCountdown}s)`;
-                    } else {
-                        clearInterval(countdownTimer);
-                        sendOtpBtn.disabled = false;
-                        sendOtpBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                        sendOtpBtn.textContent = "Send OTP";
-                    }
-                }, 1000);
-
-                showAppToast(`OTP Sent Successfully! Demo/Testing OTP: [ ${generatedOtp} ]`, "success");
-                if (registerOtp) {
-                    registerOtp.focus();
-                }
-            });
-        }
-
-        if (registerSubmitBtn) {
-            registerSubmitBtn.addEventListener('click', () => {
-                const userOtp = registerOtp ? registerOtp.value.trim() : '';
-                if (!generatedOtp) {
-                    showAppToast("Pehle 'Send OTP' button daba kar OTP prapt karein!", "error");
-                    return;
-                }
-                if (userOtp !== generatedOtp) {
-                    showAppToast("Invalid OTP code! Sahi OTP enter karein.", "error");
-                    return;
-                }
-                showAppToast("OTP Verified successfully!", "success");
-            });
-        }
-    });
 </script>
 
 <!-- LINKING POSTS.JS -->
