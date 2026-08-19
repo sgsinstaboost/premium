@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { getDatabase, ref, set, get, child, update, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 // Authentic Firebase configurations node
@@ -264,7 +264,7 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('appContainer').classList.add('flex');
 
         const shortUid = user.uid.substring(0, 8).toUpperCase();
-        document.getElementById('drawerUserIdentity').innerText = user.email || "Registered User";
+        document.getElementById('drawerUserIdentity').innerText = user.email || user.phoneNumber || "Registered User";
         document.getElementById('drawerUserLogo').src = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.uid)}`;
         
         const refCodeStr = `SGS-${shortUid}`;
@@ -302,10 +302,10 @@ onAuthStateChanged(auth, async (user) => {
 
         // Bind user database records
         const userDbRef = ref(database, 'users/' + user.uid);
-        const userEmail = user.email || 'Registered User';
+        const userEmail = user.email || user.phoneNumber || 'Registered User';
         const creationTimeStr = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '24 Jul 2026';
         const lastSignInTimeStr = user.metadata?.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '24 Jul 2026';
-        const providerTypeStr = user.providerData?.[0]?.providerId === 'google.com' ? 'google' : 'email';
+        const providerTypeStr = user.providerData?.[0]?.providerId === 'google.com' ? 'google' : (user.phoneNumber ? 'phone' : 'email');
 
         onValue(userDbRef, (snapshot) => {
             if (snapshot.exists()) {
@@ -681,13 +681,13 @@ window.submitDepositToServer = async function() {
 
                     if (!isUsed) {
                         const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
-                                         rawMsg.includes(`rs. ${numVal}`) || 
-                                         rawMsg.includes(`rs ${numVal}`) || 
-                                         rawMsg.includes(`rs.${floatVal}`) || 
-                                         rawMsg.includes(`rs ${floatVal}`) || 
-                                         rawMsg.includes(`₹${numVal}`) || 
-                                         rawMsg.includes(`₹${floatVal}`) ||
-                                         rawMsg.includes(`${numVal}`);
+                                          rawMsg.includes(`rs. ${numVal}`) || 
+                                          rawMsg.includes(`rs ${numVal}`) || 
+                                          rawMsg.includes(`rs.${floatVal}`) || 
+                                          rawMsg.includes(`rs ${floatVal}`) || 
+                                          rawMsg.includes(`₹${numVal}`) || 
+                                          rawMsg.includes(`₹${floatVal}`) ||
+                                          rawMsg.includes(`${numVal}`);
 
                         const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
                         const hasName = rawMsg.includes(cleanNameInput) || 
@@ -717,7 +717,7 @@ window.submitDepositToServer = async function() {
             }).catch(() => {});
 
             const uniqueTxHashKey = 'tx_' + currentExactTime;
-            const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+            const userEmailStr = currentAuthenticatedUserToken.email || currentAuthenticatedUserToken.phoneNumber || 'Registered User';
             const verifiedPayload = { 
                 structId: uniqueTxHashKey, 
                 uid: currentAuthenticatedUserToken.uid, 
@@ -776,7 +776,7 @@ window.submitDepositToServer = async function() {
 
         // 3. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
-        const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+        const userEmailStr = currentAuthenticatedUserToken.email || currentAuthenticatedUserToken.phoneNumber || 'Registered User';
         const activeObjectPayload = { 
             structId: uniqueTxHashKey, 
             uid: currentAuthenticatedUserToken.uid, 
@@ -965,7 +965,7 @@ window.renderAdminUsersList = function() {
         const safeEmail = window.escapeHtml(email);
         const providerIcon = (u.provider === 'google' || u.provider === 'google.com') 
             ? `<i class="fa-brands fa-google text-rose-500 text-sm" title="Google Provider"></i>` 
-            : `<i class="fa-solid fa-envelope text-sky-400 text-sm" title="Email Provider"></i>`;
+            : (u.provider === 'phone' ? `<i class="fa-solid fa-phone text-emerald-400 text-sm" title="Phone OTP Provider"></i>` : `<i class="fa-solid fa-envelope text-sky-400 text-sm" title="Email Provider"></i>`);
         const createdAtStr = window.escapeHtml(u.createdAt || '24 Jul 2026');
         const lastSignedInStr = window.escapeHtml(u.lastSignedIn || '24 Jul 2026');
         
@@ -1012,7 +1012,7 @@ window.viewAdminUserData = function(targetUid) {
     document.getElementById('modalUserEmailTitle').innerText = `${u.email || 'Registered User'} (Firebase UID: ${targetUid})`;
     document.getElementById('modalUserUID').innerText = `#${u.userUid || '----'}`;
     document.getElementById('modalUserWallet').innerText = `₹${parseFloat(u.walletBalance || 0).toFixed(2)}`;
-    document.getElementById('modalUserProvider').innerText = (u.provider === 'google' || u.provider === 'google.com') ? 'Google OAuth' : 'Email/Pass';
+    document.getElementById('modalUserProvider').innerText = (u.provider === 'google' || u.provider === 'google.com') ? 'Google OAuth' : (u.provider === 'phone' ? 'Phone OTP' : 'Email/Pass');
     document.getElementById('modalUserRefers').innerText = u.qualifiedReferCount || 0;
 
     // Populate Orders Table inside Modal
@@ -1296,15 +1296,18 @@ window.handleEmailSignup = async function() {
 };
 
 window.handleEmailLogin = function() {
-    const email = document.getElementById('loginEmail').value.trim();
+    const mobileOrEmailInput = document.getElementById('loginMobile');
+    const emailOrMobile = mobileOrEmailInput ? mobileOrEmailInput.value.trim() : '';
     const pass = document.getElementById('loginPass').value.trim();
-    if(!email || !pass) { window.showCustomToast("Please supply email & passphrase.", "error"); return; }
+    if(!emailOrMobile || !pass) { window.showCustomToast("Please supply login ID & passphrase.", "error"); return; }
 
-    signInWithEmailAndPassword(auth, email, pass)
+    const loginId = emailOrMobile.includes('@') ? emailOrMobile : `${emailOrMobile}@sgsboost.net`;
+
+    signInWithEmailAndPassword(auth, loginId, pass)
         .catch(err => {
             let friendlyMsg = err.message;
             if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                friendlyMsg = "Invalid email or password. Please try again.";
+                friendlyMsg = "Invalid mobile/email or password. Please try again.";
             }
             window.showCustomToast(friendlyMsg, "error");
         });
@@ -1327,11 +1330,172 @@ window.handleLogout = function() {
 };
 
 document.getElementById('login-submit-btn').addEventListener('click', window.handleEmailLogin);
-document.getElementById('register-submit-btn').addEventListener('click', window.handleEmailSignup);
 document.getElementById('reset-submit-btn').addEventListener('click', window.handlePasswordReset);
 document.getElementById('drawer-logout-btn').addEventListener('click', window.handleLogout);
 document.getElementById('submit-deposit-btn').addEventListener('click', window.submitDepositToServer);
 document.getElementById('submit-order-pipeline-btn').addEventListener('click', window.executeSMMPipelineOrder);
+
+// 📱 FULL WORKING FIREBASE PHONE OTP DISPATCH & VERIFY LOGIC
+let confirmationResultGlobal = null;
+let otpCooldownTimer = 0;
+let otpInterval = null;
+
+window.initRecaptchaVerifier = function() {
+    if (!window.recaptchaVerifierInstance) {
+        window.recaptchaVerifierInstance = new RecaptchaVerifier('btn-send-otp', {
+            'size': 'invisible',
+            'callback': (response) => {}
+        }, auth);
+    }
+};
+
+window.sendPhoneOtpDirect = async function() {
+    const rawMobile = document.getElementById('registerMobile').value.trim();
+    const sendOtpBtn = document.getElementById('btn-send-otp');
+
+    if (otpCooldownTimer > 0) {
+        window.showCustomToast(`Please wait ${otpCooldownTimer}s before resending OTP.`, "error");
+        return;
+    }
+
+    if (!rawMobile || rawMobile.length !== 10 || !/^\d{10}$/.test(rawMobile)) {
+        window.showCustomToast("Kripya valid 10-digit mobile number dalein!", "error");
+        document.getElementById('registerMobile').focus();
+        return;
+    }
+
+    const phoneNumberWithCode = "+91" + rawMobile;
+    window.initRecaptchaVerifier();
+
+    if (sendOtpBtn) {
+        sendOtpBtn.disabled = true;
+        sendOtpBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Sending...`;
+    }
+
+    try {
+        const appVerifier = window.recaptchaVerifierInstance;
+        confirmationResultGlobal = await signInWithPhoneNumber(auth, phoneNumberWithCode, appVerifier);
+        window.confirmationResult = confirmationResultGlobal;
+
+        window.showCustomToast("✅ OTP successfully mobile par send ho gaya!", "success");
+
+        otpCooldownTimer = 60;
+        otpInterval = setInterval(() => {
+            otpCooldownTimer--;
+            if (otpCooldownTimer > 0) {
+                sendOtpBtn.innerText = `Resend (${otpCooldownTimer}s)`;
+            } else {
+                clearInterval(otpInterval);
+                sendOtpBtn.disabled = false;
+                sendOtpBtn.innerText = "Send OTP";
+            }
+        }, 1000);
+
+        document.getElementById('registerOtp')?.focus();
+    } catch (error) {
+        console.error("SMS Dispatch Error:", error);
+        let errorMsg = error.message;
+        if (error.code === 'auth/quota-exceeded') {
+            errorMsg = "Daily SMS limit exceeded. Test number use karein ya quota badhayein!";
+        } else if (error.code === 'auth/unauthorized-domain') {
+            errorMsg = "Domain authorized nahi hai Firebase Console me!";
+        } else if (error.code === 'auth/invalid-phone-number') {
+            errorMsg = "Mobile number galat hai!";
+        }
+        window.showCustomToast(errorMsg, "error");
+
+        if (window.recaptchaVerifierInstance) {
+            window.recaptchaVerifierInstance.render().then(widgetId => {
+                if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
+            }).catch(() => {});
+        }
+        if (sendOtpBtn) {
+            sendOtpBtn.disabled = false;
+            sendOtpBtn.innerText = "Send OTP";
+        }
+    }
+};
+
+window.verifyOtpAndRegister = async function() {
+    const otpCode = document.getElementById('registerOtp')?.value.trim();
+    const rawMobile = document.getElementById('registerMobile')?.value.trim();
+    const password = document.getElementById('registerPass')?.value.trim();
+    const targetEmail = document.getElementById('registerEmail')?.value.trim();
+    const refCodeInput = document.getElementById('registerRefCode')?.value.trim().toUpperCase();
+    const submitBtn = document.getElementById('register-submit-btn');
+
+    if (!confirmationResultGlobal) {
+        window.showCustomToast("Pehle 'Send OTP' dabakar mobile par OTP mangwayein!", "error");
+        return;
+    }
+
+    if (!otpCode || otpCode.length !== 6) {
+        window.showCustomToast("Kripya 6-digit OTP code enter karein!", "error");
+        return;
+    }
+
+    if (!password || password.length < 6) {
+        window.showCustomToast("Password kam se kam 6 characters ka hona chahiye!", "error");
+        return;
+    }
+
+    if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.innerHTML = `<span>VERIFYING OTP...</span><i class="fa-solid fa-spinner animate-spin ml-2"></i>`;
+    }
+
+    try {
+        const result = await confirmationResultGlobal.confirm(otpCode);
+        const user = result.user;
+        const newUid = user.uid;
+        const userIdentifier = targetEmail || `${rawMobile}@sgsboost.net`;
+
+        // Update database with registered details
+        const updatePayload = {
+            mobile: rawMobile,
+            email: userIdentifier,
+            provider: 'phone',
+            walletBalance: 0.00,
+            createdAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+        };
+
+        if (refCodeInput) {
+            try {
+                const codeSnap = await get(ref(database, `referral_codes/${refCodeInput}`));
+                let referrerUid = codeSnap.exists() ? codeSnap.val() : null;
+                if (!referrerUid && refCodeInput.length >= 6) {
+                    referrerUid = refCodeInput.toLowerCase();
+                }
+                if (referrerUid && referrerUid !== newUid) {
+                    updatePayload.referredBy = referrerUid;
+                }
+            } catch (refErr) {
+                console.warn("Referral link error:", refErr);
+            }
+        }
+
+        await update(ref(database, `users/${newUid}`), updatePayload);
+        window.showCustomToast("🎉 OTP Verified! Account Successfully Created.", "success");
+    } catch (err) {
+        console.error("OTP Verification Error:", err);
+        window.showCustomToast("Invalid OTP code! Sahi OTP dalein ya dobara request karein.", "error");
+    } finally {
+        if (submitBtn) {
+            submitBtn.disabled = false;
+            submitBtn.innerText = "Verify OTP & Create Account";
+        }
+    }
+};
+
+const sendOtpBtnEl = document.getElementById('btn-send-otp');
+if (sendOtpBtnEl) {
+    sendOtpBtnEl.addEventListener('click', window.sendPhoneOtpDirect);
+}
+
+const registerSubmitBtnEl = document.getElementById('register-submit-btn');
+if (registerSubmitBtnEl) {
+    registerSubmitBtnEl.addEventListener('click', window.verifyOtpAndRegister);
+}
 
 // Smart SGS AI Knowledge Engine
 window.getSmartAiResponse = function(q) {
@@ -2197,7 +2361,7 @@ window.syncUserProfilePicture = function(user) {
     if (user.photoURL && user.photoURL.trim() !== '' && !user.photoURL.includes('dicebear')) {
         drawerLogoImg.src = user.photoURL;
     } else {
-        const cleanEmail = (user.email || user.uid || 'sgsuser').trim().toLowerCase();
+        const cleanEmail = (user.email || user.phoneNumber || user.uid || 'sgsuser').trim().toLowerCase();
         const avatarUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanEmail)}&backgroundColor=0d1220`;
         drawerLogoImg.src = avatarUrl;
         
