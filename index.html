@@ -150,18 +150,30 @@
         <!-- Login Form view -->
         <div id="loginForm" class="space-y-4">
             <div>
-                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Mobile Number / Email</label>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Email Address</label>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-phone text-sm"></i></span>
-                    <input type="text" id="loginMobile" placeholder="Enter 10-digit mobile number or email" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500 font-mono">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-envelope text-sm"></i></span>
+                    <input type="email" id="loginEmail" placeholder="Enter your email address" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
                 </div>
             </div>
 
             <div>
-                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Passphrase</label>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Password</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-lock text-sm"></i></span>
                     <input type="password" id="loginPass" placeholder="••••••••" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+
+            <!-- "I am not a robot" Captcha Box -->
+            <div class="p-3 bg-[#0d1220]/90 border border-slate-800/90 rounded-2xl flex items-center justify-between shadow-inner">
+                <div class="flex items-center space-x-3">
+                    <input type="checkbox" id="login-robot-check" class="w-5 h-5 rounded border-slate-700 bg-slate-900 text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900 cursor-pointer">
+                    <label for="login-robot-check" class="text-xs font-semibold text-slate-300 select-none cursor-pointer">I'm not a robot</label>
+                </div>
+                <div class="flex flex-col items-center justify-center opacity-70">
+                    <i class="fa-solid fa-shield-cat text-rose-400 text-base"></i>
+                    <span class="text-[8px] text-slate-500 font-mono">reCAPTCHA</span>
                 </div>
             </div>
 
@@ -174,8 +186,8 @@
             </div>
 
             <div class="pt-2">
-                <button id="login-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98]">
-                    Establish Secure Session
+                <button id="login-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98] flex items-center justify-center space-x-2">
+                    <span id="login-btn-text">Login</span>
                 </button>
             </div>
 
@@ -200,42 +212,26 @@
         <!-- Signup Form view -->
         <div id="signupForm" class="space-y-4 hidden">
             <div>
-                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Mobile Number</label>
-                <div class="flex gap-2">
-                    <div class="relative flex-1">
-                        <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-phone text-sm"></i></span>
-                        <input type="tel" id="registerMobile" placeholder="10-digit mobile number" maxlength="10" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500 font-mono">
-                    </div>
-                    <button type="button" id="btn-send-otp" class="px-4 py-3 bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/30 text-rose-400 font-bold text-xs rounded-2xl uppercase tracking-wider transition shrink-0">
-                        Send OTP
-                    </button>
-                </div>
-            </div>
-
-            <!-- Firebase invisible reCAPTCHA DOM Anchor -->
-            <div id="recaptcha-container" class="flex justify-center my-1"></div>
-
-            <div>
-                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Verification OTP Code</label>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Email Address</label>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-shield-check text-sm"></i></span>
-                    <input type="number" id="registerOtp" placeholder="Enter 6-digit OTP received" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-mono tracking-widest transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
-                </div>
-            </div>
-
-            <div>
-                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Provide Target Email (Optional)</label>
-                <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-at text-sm"></i></span>
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-envelope text-sm"></i></span>
                     <input type="email" id="registerEmail" placeholder="Enter registration email" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
                 </div>
             </div>
 
             <div>
-                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Configure Secure Password</label>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Password</label>
                 <div class="relative">
-                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-key text-sm"></i></span>
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-lock text-sm"></i></span>
                     <input type="password" id="registerPass" placeholder="Min 6 characters required" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Re-enter Password</label>
+                <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-shield-halved text-sm"></i></span>
+                    <input type="password" id="registerConfirmPass" placeholder="Re-enter password to confirm" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
                 </div>
             </div>
 
@@ -252,10 +248,10 @@
                 <label for="agree-terms">I authorize the secure <span class="text-rose-400 cursor-pointer underline" id="btn-show-privacy">Privacy Mandate</span> and <span class="text-rose-400 cursor-pointer underline" id="btn-show-terms">Terms of Agreement</span>.</label>
             </div>
 
-            <button id="register-submit-btn" type="button" class="w-full py-3.5 bg-gradient-to-r from-amber-600 via-rose-600 to-amber-600 hover:from-amber-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98]">
-                Verify OTP & Create Account
+            <button id="register-submit-btn" type="button" class="w-full py-3.5 bg-gradient-to-r from-amber-600 via-rose-600 to-amber-600 hover:from-amber-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98] flex items-center justify-center space-x-2">
+                <span id="register-btn-text">Create Account</span>
             </button>
-            <p class="text-xs text-center text-slate-400">Already registered? <span id="trigger-login-btn" class="text-amber-400 font-bold cursor-pointer hover:underline">Access Terminal</span></p>
+            <p class="text-xs text-center text-slate-400">Already registered? <span id="trigger-login-btn" class="text-amber-400 font-bold cursor-pointer hover:underline">Already registered? Login</span></p>
         </div>
 
         <!-- Forgot Password Form view -->
@@ -818,7 +814,7 @@
             </div>
             <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
                 <span class="text-[9px] uppercase text-slate-500 font-bold block">Auth Provider</span>
-                <span id="modalUserProvider" class="text-sky-400 font-bold">Mobile</span>
+                <span id="modalUserProvider" class="text-sky-400 font-bold">Email/Pass</span>
             </div>
             <div class="bg-[#0d1220] p-3 rounded-2xl border border-slate-800">
                 <span class="text-[9px] uppercase text-slate-500 font-bold block">Qualified Refers</span>
@@ -979,7 +975,7 @@
                         <h4 class="text-sm font-bold text-white uppercase font-mono tracking-wider pt-2 border-t border-slate-850">1. Data We Access & Collect</h4>
                         <p>When you access or authenticate with SGS Instaboost, we collect minimal data essential to deliver automated digital services:</p>
                         <ul class="list-disc pl-5 space-y-1 text-slate-400 font-mono text-[11px]">
-                            <li><strong>Identity & Account Info:</strong> Mobile Number, Email Address, and UID provided securely upon verification.</li>
+                            <li><strong>Identity & Account Info:</strong> Email Address and UID provided securely upon verification.</li>
                             <li><strong>Profile & Verification Data:</strong> User account balances, transaction references (UPI sender name/UTR), and unique referral identifiers.</li>
                             <li><strong>Service Dispatches:</strong> Destination links and numerical quantities requested for processing.</li>
                             <li><strong>Technical Diagnostics:</strong> Device network state and error logs solely used for latency optimization and security verification.</li>
