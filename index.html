@@ -161,7 +161,14 @@
                 <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Password</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-lock text-sm"></i></span>
-                    <input type="password" id="loginPass" placeholder="••••••••" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                    <input type="password" id="loginPass" placeholder="••••••••" class="w-full bg-[#0d1220]/80 pl-10 pr-11 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                    <button type="button" id="toggleLoginPassBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-rose-400 transition focus:outline-none">
+                        <i class="fa-solid fa-eye text-sm" id="toggleLoginPassIcon"></i>
+                    </button>
+                </div>
+                <!-- Reset Password link right below password input -->
+                <div class="flex justify-end pt-1.5">
+                    <span id="trigger-forgot-btn" class="text-xs text-slate-400 hover:text-rose-400 cursor-pointer transition font-medium">Reset Password</span>
                 </div>
             </div>
 
@@ -182,11 +189,10 @@
                     <input id="remember-me" type="checkbox" checked class="h-4 w-4 rounded border-slate-800 bg-[#0d1220] text-rose-500 focus:ring-rose-500 focus:ring-offset-slate-900">
                     <label for="remember-me" class="ml-2 block text-xs text-slate-400">Keep safe profile cached</label>
                 </div>
-                <span id="trigger-forgot-btn" class="text-xs text-slate-400 hover:text-rose-400 cursor-pointer transition font-medium">Reset Credentials?</span>
             </div>
 
             <div class="pt-2">
-                <button id="login-submit-btn" class="w-full py-3.5 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98] flex items-center justify-center space-x-2">
+                <button id="login-submit-btn" type="button" class="w-full py-3.5 bg-gradient-to-r from-rose-600 via-amber-600 to-rose-600 hover:from-rose-500 hover:to-rose-500 text-white font-extrabold uppercase text-xs tracking-widest rounded-2xl shadow-glow-rose transition active:scale-[0.98] flex items-center justify-center space-x-2">
                     <span id="login-btn-text">Login</span>
                 </button>
             </div>
@@ -223,7 +229,10 @@
                 <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Password</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-lock text-sm"></i></span>
-                    <input type="password" id="registerPass" placeholder="Min 6 characters required" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                    <input type="password" id="registerPass" placeholder="Min 6 characters required" class="w-full bg-[#0d1220]/80 pl-10 pr-11 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                    <button type="button" id="toggleRegPassBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-rose-400 transition focus:outline-none">
+                        <i class="fa-solid fa-eye text-sm" id="toggleRegPassIcon"></i>
+                    </button>
                 </div>
             </div>
 
@@ -231,7 +240,10 @@
                 <label class="block text-[10px] uppercase font-bold text-slate-400 mb-1.5 tracking-wider">Re-enter Password</label>
                 <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3.5 flex items-center text-slate-500"><i class="fa-solid fa-shield-halved text-sm"></i></span>
-                    <input type="password" id="registerConfirmPass" placeholder="Re-enter password to confirm" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                    <input type="password" id="registerConfirmPass" placeholder="Re-enter password to confirm" class="w-full bg-[#0d1220]/80 pl-10 pr-11 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
+                    <button type="button" id="toggleRegConfirmPassBtn" class="absolute inset-y-0 right-0 pr-3.5 flex items-center text-slate-500 hover:text-rose-400 transition focus:outline-none">
+                        <i class="fa-solid fa-eye text-sm" id="toggleRegConfirmPassIcon"></i>
+                    </button>
                 </div>
             </div>
 
@@ -263,8 +275,8 @@
                     <input type="email" id="forgotEmail" placeholder="Enter registered email address" class="w-full bg-[#0d1220]/80 pl-10 pr-4 py-3 rounded-2xl border border-slate-800 focus:outline-none focus:border-rose-500 text-slate-200 text-sm font-semibold transition placeholder:text-slate-600 focus:ring-1 focus:ring-rose-500">
                 </div>
             </div>
-            <button id="reset-submit-btn" class="w-full py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-widest rounded-2xl transition shadow-glow-purple active:scale-[0.98]">
-                Transmit Recovery Token
+            <button id="reset-submit-btn" type="button" class="w-full py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold uppercase text-xs tracking-widest rounded-2xl transition shadow-glow-purple active:scale-[0.98] flex items-center justify-center space-x-2">
+                <span id="reset-btn-text">Transmit Recovery Token</span>
             </button>
             <p class="text-xs text-center text-slate-400"><span id="trigger-login-btn-2" class="text-slate-400 hover:text-white cursor-pointer underline font-medium font-mono">Return to Gateway Access</span></p>
         </div>
@@ -743,7 +755,7 @@
                         </thead>
                         <tbody id="adminPipelineStream" class="text-xs font-mono divide-y divide-slate-800/60">
                         <tr>
-                            <td colspan="5" class="p-12 text-center text-slate-600 italic font-mono">No clearance pipeline metrics captured inside system database.</td>
+                            <td colspan="5" class="p-12 text-center text-slate-500 italic font-mono">No clearance pipeline metrics captured inside system database.</td>
                         </tr>
                         </tbody>
                     </table>
