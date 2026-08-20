@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-app.js";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, RecaptchaVerifier, signInWithPhoneNumber } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithCredential } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-auth.js";
 import { getDatabase, ref, set, get, child, update, onValue } from "https://www.gstatic.com/firebasejs/9.22.1/firebase-database.js";
 
 // Authentic Firebase configurations node
@@ -12,7 +12,7 @@ const firebaseConfig = {
     messagingSenderId: "547095411322",
     appId: "1:547095411322:web:0e5f4139a0e567e0ecd9c3"
 };
- 
+
 // Initialize Firebase Engines
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -30,12 +30,10 @@ window.hideGlobalLoadingScreen = function() {
     }
 };
 
-// Maximum Fail-safe Loader timer (2.5 seconds fallback)
 setTimeout(() => {
     window.hideGlobalLoadingScreen();
 }, 2500);
 
-// Auto capture referral code from URL query string & store in localStorage
 const urlParams = new URLSearchParams(window.location.search);
 let refParam = urlParams.get('ref') || urlParams.get('id');
 if (refParam) {
@@ -51,17 +49,15 @@ if (refParam) {
     });
 }
 
-// Core Shared Context State Variables
 let currentAuthenticatedUserToken = null;
 let userDataRecordCached = null;
 
 const MASTER_ADMIN_UIDS = ["XOwUMbiocdcGszrNy4NHQ3zBXOx1", "FXiwQyLFgbYuJkVQ7ONjaAQpbSG3"];
 
-// Explicitly defined functions for Admin Console to ensure Hoisting readiness
 window.launchAdminConsole = function launchAdminConsole() {
     const drawer = document.getElementById('sideDrawer');
     if(drawer && !drawer.classList.contains('-translate-x-full')) window.toggleDrawer();
-    
+
     const consoleEl = document.getElementById('adminCoreConsole');
     if (consoleEl) {
         consoleEl.classList.remove('hidden');
@@ -85,7 +81,7 @@ window.synchronizeAdminConsolePipeline = function synchronizeAdminConsolePipelin
         }
 
         const collection = snapshot.val();
-        
+
         get(usersRef).then((usersSnap) => {
             const usersData = usersSnap.exists() ? usersSnap.val() : {};
             let htmlRows = '';
@@ -128,7 +124,7 @@ window.synchronizeAdminConsolePipeline = function synchronizeAdminConsolePipelin
 
 window.synchronizeAdminUsersPipeline = function synchronizeAdminUsersPipeline() {
     const usersRef = ref(database, 'users');
-    
+
     const handleUsersSnapshot = (snapshot) => {
         if(!snapshot.exists()) {
             window.allUsersCache = {};
@@ -140,7 +136,6 @@ window.synchronizeAdminUsersPipeline = function synchronizeAdminUsersPipeline() 
         }
     };
 
-    // Realtime listener
     onValue(usersRef, handleUsersSnapshot, (error) => {
         console.error("User directory stream error:", error);
         const stream = document.getElementById('adminUsersStream');
@@ -149,7 +144,6 @@ window.synchronizeAdminUsersPipeline = function synchronizeAdminUsersPipeline() 
         }
     });
 
-    // Instant fetch fallback
     get(usersRef).then(handleUsersSnapshot).catch((err) => {
         console.warn("Direct users fetch error:", err);
         const stream = document.getElementById('adminUsersStream');
@@ -159,12 +153,10 @@ window.synchronizeAdminUsersPipeline = function synchronizeAdminUsersPipeline() 
     });
 };
 
-// Check for redirect sign-in result on page load
 getRedirectResult(auth).catch((err) => {
     console.warn("Redirect sign-in result process completed/idle:", err);
 });
 
-// Service Database Repository
 const serviceRepository = {
     views: [
         { name: "14237 - 🚀 Instagram Reels Views (Instant Start 🔥) | 500K/Day 🚀 | Cheapest ⚡ — ₹0.25 per 1000", cost: 0.25 },
@@ -264,25 +256,23 @@ onAuthStateChanged(auth, async (user) => {
         document.getElementById('appContainer').classList.add('flex');
 
         const shortUid = user.uid.substring(0, 8).toUpperCase();
-        document.getElementById('drawerUserIdentity').innerText = user.email || user.phoneNumber || "Registered User";
+        document.getElementById('drawerUserIdentity').innerText = user.email || "Registered User";
         document.getElementById('drawerUserLogo').src = user.photoURL || `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.uid)}`;
-        
+
         const refCodeStr = `SGS-${shortUid}`;
         const refLinkStr = `https://${window.location.host}/?ref=${shortUid}`;
         if (document.getElementById('referCode')) document.getElementById('referCode').innerText = refCodeStr;
         if (document.getElementById('referLink')) document.getElementById('referLink').innerText = refLinkStr;
 
-        // Save referral code mappings
         set(ref(database, `referral_codes/${refCodeStr}`), user.uid).catch(() => {});
         set(ref(database, `referral_codes/${shortUid}`), user.uid).catch(() => {});
 
         const isMasterAdmin = MASTER_ADMIN_UIDS.includes(user.uid);
-        
+
         if (isMasterAdmin) {
-            // Show Admin Link in Side Drawer for Master Admin
             const drawerLink = document.getElementById('drawerAdminLink');
             if (drawerLink) drawerLink.classList.remove('hidden');
-            
+
             window.launchAdminConsole();
             window.hideGlobalLoadingScreen();
         } else {
@@ -300,34 +290,32 @@ onAuthStateChanged(auth, async (user) => {
             }).catch(() => {});
         }
 
-        // Bind user database records
         const userDbRef = ref(database, 'users/' + user.uid);
-        const userEmail = user.email || user.phoneNumber || 'Registered User';
+        const userEmail = user.email || 'Registered User';
         const creationTimeStr = user.metadata?.creationTime ? new Date(user.metadata.creationTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '24 Jul 2026';
         const lastSignInTimeStr = user.metadata?.lastSignInTime ? new Date(user.metadata.lastSignInTime).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' }) : '24 Jul 2026';
-        const providerTypeStr = user.providerData?.[0]?.providerId === 'google.com' ? 'google' : (user.phoneNumber ? 'phone' : 'email');
+        const providerTypeStr = user.providerData?.[0]?.providerId === 'google.com' ? 'google' : 'email';
 
         onValue(userDbRef, (snapshot) => {
             if (snapshot.exists()) {
                 userDataRecordCached = snapshot.val();
-                update(userDbRef, { 
+                update(userDbRef, {
                     email: userEmail,
                     provider: providerTypeStr,
                     createdAt: userDataRecordCached.createdAt || creationTimeStr,
                     lastSignedIn: lastSignInTimeStr
                 }).catch(() => {});
             } else {
-                userDataRecordCached = { 
-                    email: userEmail, 
+                userDataRecordCached = {
+                    email: userEmail,
                     provider: providerTypeStr,
                     createdAt: creationTimeStr,
                     lastSignedIn: lastSignInTimeStr,
-                    walletBalance: 0.00, 
-                    transactions: {}, 
-                    orders: {} 
+                    walletBalance: 0.00,
+                    transactions: {},
+                    orders: {}
                 };
-                
-                // Auto apply referral code if URL parameter exists
+
                 if (refParam) {
                     const cleanRef = refParam.trim().toUpperCase();
                     get(ref(database, `referral_codes/${cleanRef}`)).then((codeSnap) => {
@@ -355,13 +343,12 @@ onAuthStateChanged(auth, async (user) => {
             window.hideGlobalLoadingScreen();
         });
 
-        // Auto Trigger Status Synchronizer loop every 15 seconds
         if (window.statusSyncInterval) clearInterval(window.statusSyncInterval);
         window.syncOrdersStatusFromProvider();
         window.statusSyncInterval = setInterval(() => {
             window.syncOrdersStatusFromProvider();
         }, 15000);
-        
+
     } else {
         currentAuthenticatedUserToken = null;
         document.getElementById('appContainer').classList.add('hidden');
@@ -372,33 +359,39 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-window.handleGoogleLogin = async function() {
-    const btn = document.getElementById('google-login-btn');
-    if(btn) {
-        btn.disabled = true;
-        btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin text-rose-500"></i><span>Authenticating Google...</span>`;
+// Google Login Handler (Android Native Bridge + Web Popup Fallback)
+window.handleGoogleLogin = function() {
+    if (window.AndroidBridge && typeof window.AndroidBridge.triggerGoogleSignIn === 'function') {
+        window.AndroidBridge.triggerGoogleSignIn();
+    } else {
+        signInWithPopup(auth, googleProvider)
+            .then(() => {
+                window.showCustomToast("Google Session established successfully!", "success");
+            })
+            .catch(error => {
+                console.warn("Google popup interrupted, attempting redirect flow:", error);
+                if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
+                    signInWithRedirect(auth, googleProvider).catch(redirectErr => {
+                        window.showCustomToast("Google Auth error: " + redirectErr.message, "error");
+                    });
+                } else {
+                    let friendlyMsg = error.message;
+                    if (error.code === 'auth/unauthorized-domain') friendlyMsg = "Domain not authorized in Firebase Console!";
+                    window.showCustomToast(friendlyMsg, "error");
+                }
+            });
     }
+};
+
+// Android Native Sign-In Callback Receiver
+window.onNativeGoogleSuccess = async function(idToken, email, displayName) {
     try {
-        const result = await signInWithPopup(auth, googleProvider);
-        window.showCustomToast("Google Session established successfully!", "success");
+        const credential = GoogleAuthProvider.credential(idToken);
+        await signInWithCredential(auth, credential);
+        window.showCustomToast("Google Login Successful!", "success");
     } catch (error) {
-        console.warn("Google popup interrupted, attempting redirect flow:", error);
-        if (error.code === 'auth/popup-blocked' || error.code === 'auth/popup-closed-by-user' || error.code === 'auth/cancelled-popup-request') {
-            try {
-                await signInWithRedirect(auth, googleProvider);
-            } catch (redirectErr) {
-                window.showCustomToast("Google Auth error: " + redirectErr.message, "error");
-            }
-        } else {
-            let friendlyMsg = error.message;
-            if (error.code === 'auth/unauthorized-domain') friendlyMsg = "Domain not authorized in Firebase Console!";
-            window.showCustomToast(friendlyMsg, "error");
-        }
-    } finally {
-        if(btn) {
-            btn.disabled = false;
-            btn.innerHTML = `<i class="fa-brands fa-google text-rose-500 text-base"></i><span>Continue with Google</span>`;
-        }
+        console.error("Firebase Native Google Auth Error:", error);
+        window.showCustomToast("Login Failed: " + error.message, "error");
     }
 };
 
@@ -409,14 +402,14 @@ if (googleBtnEl) {
 
 window.switchTab = function(targetId) {
     document.querySelectorAll('.tab-content').forEach(c => c.classList.add('hidden'));
-    
+
     document.querySelectorAll('.tab-btn').forEach(b => {
         b.className = "text-left p-3.5 rounded-2xl flex items-center space-x-3 font-medium transition text-slate-400 hover:text-slate-200 hover:bg-slate-900 tab-btn";
     });
 
     const targetSection = document.getElementById(`tab-${targetId}`);
     if(targetSection) targetSection.classList.remove('hidden');
-    
+
     const activeBtn = document.getElementById(`tab-btn-${targetId}`);
     if(activeBtn) {
         activeBtn.className = "text-left p-3.5 rounded-2xl flex items-center space-x-3 font-semibold transition tab-btn glass-panel-active text-white";
@@ -431,7 +424,7 @@ window.switchTab = function(targetId) {
         mobileActiveBtn.classList.remove('text-slate-400');
         mobileActiveBtn.classList.add('text-rose-500', 'scale-105');
     }
-    
+
     if (targetId === 'myorders') {
         window.syncOrdersStatusFromProvider();
     }
@@ -442,7 +435,6 @@ window.switchTab = function(targetId) {
     }
 };
 
-/// 100% Reliable Standard Dynamic UPI QR Code Generator for Sgs Provider
 window.generateSecureQR = function() {
     const requestedAmount = document.getElementById('fundAmount').value;
     const container = document.getElementById('qrMatrixContainer');
@@ -454,28 +446,26 @@ window.generateSecureQR = function() {
         try {
             const upiId = "Q341013270@ybl";
             const cleanAmount = parseFloat(requestedAmount).toFixed(2);
-            
-            // Standard NPCI Compliant Dynamic Intent URI with payee name Sgs Provider
+
             const upiUri = `upi://pay?pa=${upiId}&pn=Sgs%20Provider&am=${cleanAmount}&cu=INR&tn=WalletTopup`;
             targetImg.src = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&margin=10&data=${encodeURIComponent(upiUri)}`;
 
-            container.classList.remove('hidden'); 
-            prompt.classList.add('hidden'); 
-            summary.innerText = `AMOUNT TO PAY: ₹${cleanAmount}`; 
+            container.classList.remove('hidden');
+            prompt.classList.add('hidden');
+            summary.innerText = `AMOUNT TO PAY: ₹${cleanAmount}`;
             summary.classList.remove('hidden');
         } catch(qrErr) {
             console.error("QR Generation Failure: ", qrErr);
         }
-    } else { 
-        container.classList.add('hidden'); 
-        prompt.classList.remove('hidden'); 
-        summary.classList.add('hidden'); 
+    } else {
+        container.classList.add('hidden');
+        prompt.classList.remove('hidden');
+        summary.classList.add('hidden');
     }
 };
 
 document.getElementById('fundAmount').addEventListener('input', window.generateSecureQR);
 
-// Auto-convert name input to UPPERCASE automatically as the user types
 const utrInputEl = document.getElementById('utrInput');
 if (utrInputEl) {
     utrInputEl.addEventListener('input', function() {
@@ -483,7 +473,6 @@ if (utrInputEl) {
     });
 }
 
-// Form Calculator & Service Select
 window.calculateRealtimeCost = function() {
     const selectElement = document.getElementById('serviceSelect');
     if (!selectElement) return;
@@ -512,7 +501,7 @@ window.updateServices = function() {
 
     const collection = serviceRepository[selectedCategory];
     targetSelectBox.innerHTML = '';
-    
+
     if (collection) {
         collection.forEach(svc => { targetSelectBox.innerHTML += `<option value="${svc.cost}">${svc.name}</option>`; });
     }
@@ -526,7 +515,7 @@ document.getElementById('targetOrderQty').addEventListener('input', window.calcu
 function renderCachedUserStateData() {
     if(!userDataRecordCached) return;
     document.getElementById('userBalance').innerText = parseFloat(userDataRecordCached.walletBalance || 0).toFixed(2);
-    
+
     const tbody = document.getElementById('userLedgerRows');
     const txCollection = userDataRecordCached.transactions;
     if(!txCollection || Object.keys(txCollection).length === 0) {
@@ -540,7 +529,7 @@ function renderCachedUserStateData() {
         let currentBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${t.internalState}</span>`;
         if(t.internalState === 'Verified') currentBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${t.internalState}</span>`;
         if(t.internalState === 'Cancelled') currentBadge = `<span class="bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${t.internalState}</span>`;
-        
+
         tbody.innerHTML += `
             <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800/40">
                 <td class="p-4 font-bold text-slate-200">₹${parseFloat(t.value).toFixed(2)}</td>
@@ -550,10 +539,9 @@ function renderCachedUserStateData() {
     });
 }
 
-// Exact time-based logic: 0-30s = Pending, 30s-2m = In Progress, After 2m = Completed
 window.syncOrdersStatusFromProvider = async function() {
     if (!currentAuthenticatedUserToken || !userDataRecordCached || !userDataRecordCached.orders) return;
-    
+
     const ordersList = userDataRecordCached.orders;
     const now = Date.now();
     let stateHasChanged = false;
@@ -564,11 +552,11 @@ window.syncOrdersStatusFromProvider = async function() {
             const elapsedSeconds = (now - (o.timestamp || now)) / 1000;
             let simulatedStatus = o.status || 'Pending';
 
-            if (elapsedSeconds > 120) { // After 2 minutes (120 seconds)
+            if (elapsedSeconds > 120) {
                 simulatedStatus = 'Completed';
-            } else if (elapsedSeconds > 30) { // After 30 seconds up to 2 mins
+            } else if (elapsedSeconds > 30) {
                 simulatedStatus = 'In Progress';
-            } else { // First 30 seconds
+            } else {
                 simulatedStatus = 'Pending';
             }
 
@@ -587,7 +575,6 @@ window.syncOrdersStatusFromProvider = async function() {
     }
 };
 
-// Render User Orders History (Exact Aapkaprovider Columns Style)
 window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     const tbody = document.getElementById('myOrdersTableStream');
     if (!userDataRecordCached || !userDataRecordCached.orders || Object.keys(userDataRecordCached.orders).length === 0) {
@@ -600,7 +587,7 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     Object.keys(ordersList).reverse().forEach(key => {
         const o = ordersList[key];
         let statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status || 'Pending'}</span>`;
-        
+
         if (o.status === 'Completed') {
             statusBadge = `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">Completed</span>`;
         } else if (o.status === 'Cancelled' || o.status === 'Canceled') {
@@ -608,7 +595,7 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
         } else if (o.status === 'In Progress' || o.status === 'Processing' || o.status === 'Pending') {
             statusBadge = `<span class="bg-amber-500/10 text-amber-400 border border-amber-500/20 px-3 py-1 rounded-full text-[10px] font-mono font-bold">${o.status}</span>`;
         }
-        
+
         const dateStr = o.timestamp ? new Date(o.timestamp).toLocaleString('en-GB', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit', second: '2-digit' }).replace(',', '') : '2026-07-25 13:44:20';
         const cleanLink = o.link || 'https://www.instagram.com/reel/...';
         const pureOrderId = o.rawOrderId || (o.orderId ? o.orderId.replace('SGS-', '') : '2022244');
@@ -627,20 +614,18 @@ window.renderUserOrdersHistory = function renderUserOrdersHistory() {
     });
 };
 
-// Global Execution Debounce Lock to prevent duplicate calls on fast clicks
 let isDepositSubmitting = false;
 
-// Deposit Handling (Exact Instant Auto-Verification, Anti-Duplicate & Anti-Fraud Protected)
 window.submitDepositToServer = async function() {
-    if (isDepositSubmitting) return; // Prevent double-trigger completely
+    if (isDepositSubmitting) return;
 
     const value = parseFloat(document.getElementById('fundAmount').value);
     const rawIdentifier = document.getElementById('utrInput').value;
     const identifierInput = rawIdentifier.replace(/\s+/g, ' ').trim().toUpperCase();
-    
-    if (!value || value <= 0 || !identifierInput || identifierInput.length < 2) { 
-        window.showCustomToast("Validation report error. Verify inputs (Amount & Sender Name).", "error"); 
-        return; 
+
+    if (!value || value <= 0 || !identifierInput || identifierInput.length < 2) {
+        window.showCustomToast("Validation report error. Verify inputs (Amount & Sender Name).", "error");
+        return;
     }
 
     if (!currentAuthenticatedUserToken) {
@@ -660,10 +645,9 @@ window.submitDepositToServer = async function() {
         const numVal = parseInt(value, 10);
         const floatVal = parseFloat(value).toFixed(2);
 
-        // 1. Fetch realtime PhonePe notifications from /payments node with 3.5s Timeout protection
         const fetchPaymentsPromise = get(ref(database, 'payments'));
         const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error("Timeout")), 3500));
-        
+
         let autoMatched = false;
         let matchedKey = null;
 
@@ -673,24 +657,23 @@ window.submitDepositToServer = async function() {
                 const paymentsData = paymentsSnap.val();
                 const sortedKeys = Object.keys(paymentsData).reverse();
 
-                // Scan for the most recent UNUSED payment matching Amount & Name
                 for (let key of sortedKeys) {
                     const item = paymentsData[key];
                     const rawMsg = (typeof item === 'object' ? JSON.stringify(item) : String(item)).toLowerCase().replace(/\s+/g, ' ');
                     const isUsed = item && item.used === true;
 
                     if (!isUsed) {
-                        const hasAmount = rawMsg.includes(`rs.${numVal}`) || 
-                                          rawMsg.includes(`rs. ${numVal}`) || 
-                                          rawMsg.includes(`rs ${numVal}`) || 
-                                          rawMsg.includes(`rs.${floatVal}`) || 
-                                          rawMsg.includes(`rs ${floatVal}`) || 
-                                          rawMsg.includes(`₹${numVal}`) || 
-                                          rawMsg.includes(`₹${floatVal}`) ||
-                                          rawMsg.includes(`${numVal}`);
+                        const hasAmount = rawMsg.includes(`rs.${numVal}`) ||
+                                         rawMsg.includes(`rs. ${numVal}`) ||
+                                         rawMsg.includes(`rs ${numVal}`) ||
+                                         rawMsg.includes(`rs.${floatVal}`) ||
+                                         rawMsg.includes(`rs ${floatVal}`) ||
+                                         rawMsg.includes(`₹${numVal}`) ||
+                                         rawMsg.includes(`₹${floatVal}`) ||
+                                         rawMsg.includes(`${numVal}`);
 
                         const nameParts = cleanNameInput.split(' ').filter(p => p.length >= 2);
-                        const hasName = rawMsg.includes(cleanNameInput) || 
+                        const hasName = rawMsg.includes(cleanNameInput) ||
                                         (nameParts.length > 0 && nameParts.some(part => rawMsg.includes(part)));
 
                         if (hasAmount && hasName) {
@@ -705,25 +688,23 @@ window.submitDepositToServer = async function() {
             console.warn("Auto-match scan deferred to audit fallback:", fetchErr);
         }
 
-        // 2. Instant Auto-Verification Success Flow (Single balance credit only)
         if (autoMatched && matchedKey) {
             const currentExactTime = Date.now();
 
-            // Lock this exact payment entry so it can never be claimed again
-            await update(ref(database, `payments/${matchedKey}`), { 
-                used: true, 
+            await update(ref(database, `payments/${matchedKey}`), {
+                used: true,
                 claimedBy: currentAuthenticatedUserToken.uid,
                 claimedAt: currentExactTime
             }).catch(() => {});
 
             const uniqueTxHashKey = 'tx_' + currentExactTime;
-            const userEmailStr = currentAuthenticatedUserToken.email || currentAuthenticatedUserToken.phoneNumber || 'Registered User';
-            const verifiedPayload = { 
-                structId: uniqueTxHashKey, 
-                uid: currentAuthenticatedUserToken.uid, 
-                email: userEmailStr, 
-                value: value, 
-                utr: identifierInput, 
+            const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+            const verifiedPayload = {
+                structId: uniqueTxHashKey,
+                uid: currentAuthenticatedUserToken.uid,
+                email: userEmailStr,
+                value: value,
+                utr: identifierInput,
                 internalState: 'Verified',
                 timestamp: currentExactTime
             };
@@ -743,7 +724,6 @@ window.submitDepositToServer = async function() {
             document.getElementById('userBalance').innerText = updatedBal.toFixed(2);
             renderCachedUserStateData();
 
-            // Check referral reward eligibility without double-crediting deposit
             if (parseFloat(value) >= 10.00) {
                 const targetUserRef = ref(database, `users/${currentAuthenticatedUserToken.uid}`);
                 get(targetUserRef).then((snap) => {
@@ -774,15 +754,14 @@ window.submitDepositToServer = async function() {
             return;
         }
 
-        // 3. Fallback: If not matched instantly, route safely to Admin Clearance Audit Queue
         const uniqueTxHashKey = 'tx_' + Date.now();
-        const userEmailStr = currentAuthenticatedUserToken.email || currentAuthenticatedUserToken.phoneNumber || 'Registered User';
-        const activeObjectPayload = { 
-            structId: uniqueTxHashKey, 
-            uid: currentAuthenticatedUserToken.uid, 
-            email: userEmailStr, 
-            value: value, 
-            utr: identifierInput, 
+        const userEmailStr = currentAuthenticatedUserToken.email || 'Registered User';
+        const activeObjectPayload = {
+            structId: uniqueTxHashKey,
+            uid: currentAuthenticatedUserToken.uid,
+            email: userEmailStr,
+            value: value,
+            utr: identifierInput,
             internalState: 'Processing',
             timestamp: Date.now()
         };
@@ -807,7 +786,7 @@ window.submitDepositToServer = async function() {
     }
 };
 
-// ✅ UPDATED HYBRID CLIENT DISPATCHER (Direct & Vercel Proxy Safe)
+// DIRECT AAPKAPROVIDER DISPATCHER FOR APP (SECURED VIA CLOUDFLARE PROXY)
 window.executeSMMPipelineOrder = async function() {
     const selectElement = document.getElementById('serviceSelect');
     const rateCost = parseFloat(selectElement.value);
@@ -816,14 +795,17 @@ window.executeSMMPipelineOrder = async function() {
     const qty = parseInt(document.getElementById('targetOrderQty').value);
     const link = document.getElementById('targetOrderLink').value.trim();
 
-    if(!qty || qty <= 0 || !link) { window.showCustomToast("Fill the destination parameters fully.", "error"); return; }
-    
+    if(!qty || qty <= 0 || !link) {
+        window.showCustomToast("Fill the destination parameters fully.", "error");
+        return;
+    }
+
     const realTimeComputedCost = (rateCost / 1000) * qty;
     const currentWalletBal = parseFloat(userDataRecordCached ? userDataRecordCached.walletBalance || 0 : 0);
 
-    if(currentWalletBal < realTimeComputedCost) { 
-        window.showCustomToast(`Ledger deficit. Cost: ₹${realTimeComputedCost.toFixed(2)}`, "error"); 
-        return; 
+    if(currentWalletBal < realTimeComputedCost) {
+        window.showCustomToast(`Ledger deficit. Cost: ₹${realTimeComputedCost.toFixed(2)}`, "error");
+        return;
     }
 
     const submitBtn = document.getElementById('submit-order-pipeline-btn');
@@ -831,15 +813,14 @@ window.executeSMMPipelineOrder = async function() {
     submitBtn.innerHTML = `<span>DISPATCHING...</span><i class="fa-solid fa-spinner animate-spin"></i>`;
 
     let providerLiveOrderId = null;
-    let initialStartCount = "15556";
-    
+    let initialStartCount = "0";
+
     try {
-        // Try calling Vercel API Route first
-        const res = await fetch("/api/order", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+        const res = await fetch('https://delicate-hat-f3ad.skrgamingyt2006.workers.dev/', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-                action: "add",
+                action: 'add',
                 service: extractedServiceId,
                 link: link,
                 quantity: qty
@@ -847,9 +828,9 @@ window.executeSMMPipelineOrder = async function() {
         });
 
         const data = await res.json();
-        
+
         if (data && data.error) {
-            window.showCustomToast(`Order Refused: ${data.error}. Balance not deducted.`, "error");
+            window.showCustomToast(`Order Refused: ${data.error}`, "error");
             submitBtn.disabled = false;
             submitBtn.innerHTML = `<span>DISPATCH SMM PIPELINE</span><i class="fa-solid fa-paper-plane animate-pulse"></i>`;
             return;
@@ -860,27 +841,7 @@ window.executeSMMPipelineOrder = async function() {
             if (data.start_count) initialStartCount = data.start_count;
         }
     } catch (err) {
-        // Fallback for direct App/CORS execution if Vercel serverless proxy is unreached
-        console.warn("Serverless route unreached, executing client-side fallback dispatch...");
-        try {
-            const fallbackKey = 'ad7b6ed8b9e332b2f4b9c4840e0fb7db';
-            const formData = new URLSearchParams();
-            formData.append('key', fallbackKey);
-            formData.append('action', 'add');
-            formData.append('service', extractedServiceId);
-            formData.append('link', link);
-            formData.append('quantity', qty);
-
-            const fbRes = await fetch('https://aapkaprovider.com/api/v2', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-                body: formData.toString()
-            });
-            const fbData = await fbRes.json();
-            if (fbData && (fbData.order || fbData.orderId)) {
-                providerLiveOrderId = fbData.order || fbData.orderId;
-            }
-        } catch(e) {}
+        console.warn("Direct API call error:", err);
     }
 
     if (!providerLiveOrderId) {
@@ -889,12 +850,12 @@ window.executeSMMPipelineOrder = async function() {
 
     const uniqueOrderKey = 'order_' + Date.now();
     const cleanServiceName = selectedServiceName.split('—')[0].trim();
-    const orderPayloadData = { 
-        orderId: 'SGS-' + providerLiveOrderId, 
+    const orderPayloadData = {
+        orderId: 'SGS-' + providerLiveOrderId,
         rawOrderId: providerLiveOrderId,
-        serviceName: cleanServiceName, 
-        quantity: qty, 
-        cost: realTimeComputedCost, 
+        serviceName: cleanServiceName,
+        quantity: qty,
+        cost: realTimeComputedCost,
         link: link,
         startCount: initialStartCount,
         status: 'Pending',
@@ -919,11 +880,11 @@ window.executeSMMPipelineOrder = async function() {
         const banner = document.getElementById('topSuccessBanner');
         document.getElementById('bannerNotificationText').innerText = `SUCCESS! Order ID: ${providerLiveOrderId} | Service ID: ${extractedServiceId} | Cost: ₹${realTimeComputedCost.toFixed(2)}`;
         banner.classList.remove('hidden');
-        
+
         document.getElementById('targetOrderQty').value = '';
         document.getElementById('targetOrderLink').value = '';
         document.getElementById('calculatedCostText').innerText = "0.00";
-        
+
         window.showCustomToast("Order successfully placed & logged!", "success");
         setTimeout(() => { banner.classList.add('hidden'); }, 6000);
 
@@ -935,7 +896,6 @@ window.executeSMMPipelineOrder = async function() {
     }
 };
 
-// 🌟 UPDATED ADMIN USERS LIST (SHOWS EMAIL WITH UID & CLICKABLE VIEW DATA)
 window.renderAdminUsersList = function() {
     const stream = document.getElementById('adminUsersStream');
     if(!stream) return;
@@ -955,7 +915,7 @@ window.renderAdminUsersList = function() {
 
         const email = u.email || `User (${uid.substring(0, 8)})`;
         const userUidVal = u.userUid || '----';
-        
+
         if (searchTerm && !email.toLowerCase().includes(searchTerm) && !userUidVal.toLowerCase().includes(searchTerm)) {
             return;
         }
@@ -963,12 +923,12 @@ window.renderAdminUsersList = function() {
 
         const liveBal = u.walletBalance !== undefined ? parseFloat(u.walletBalance).toFixed(2) : "0.00";
         const safeEmail = window.escapeHtml(email);
-        const providerIcon = (u.provider === 'google' || u.provider === 'google.com') 
-            ? `<i class="fa-brands fa-google text-rose-500 text-sm" title="Google Provider"></i>` 
-            : (u.provider === 'phone' ? `<i class="fa-solid fa-phone text-emerald-400 text-sm" title="Phone OTP Provider"></i>` : `<i class="fa-solid fa-envelope text-sky-400 text-sm" title="Email Provider"></i>`);
+        const providerIcon = (u.provider === 'google' || u.provider === 'google.com')
+            ? `<i class="fa-brands fa-google text-rose-500 text-sm" title="Google Provider"></i>`
+            : `<i class="fa-solid fa-envelope text-sky-400 text-sm" title="Email Provider"></i>`;
         const createdAtStr = window.escapeHtml(u.createdAt || '24 Jul 2026');
         const lastSignedInStr = window.escapeHtml(u.lastSignedIn || '24 Jul 2026');
-        
+
         htmlRows += `
             <tr class="hover:bg-[#0d1220]/40 transition border-b border-slate-800 font-mono text-xs">
                 <td class="p-3 sm:p-4">
@@ -999,7 +959,6 @@ window.renderAdminUsersList = function() {
     }
 };
 
-// 🌟 NEW FUNCTION: OPEN ADMIN USER DATA DEEP AUDIT MODAL
 window.viewAdminUserData = function(targetUid) {
     if (!window.allUsersCache || !window.allUsersCache[targetUid]) {
         if (window.showCustomToast) window.showCustomToast("User record not found in cache", "error");
@@ -1008,14 +967,13 @@ window.viewAdminUserData = function(targetUid) {
 
     const u = window.allUsersCache[targetUid];
     const modal = document.getElementById('adminUserDetailModalOverlay');
-    
+
     document.getElementById('modalUserEmailTitle').innerText = `${u.email || 'Registered User'} (Firebase UID: ${targetUid})`;
     document.getElementById('modalUserUID').innerText = `#${u.userUid || '----'}`;
     document.getElementById('modalUserWallet').innerText = `₹${parseFloat(u.walletBalance || 0).toFixed(2)}`;
-    document.getElementById('modalUserProvider').innerText = (u.provider === 'google' || u.provider === 'google.com') ? 'Google OAuth' : (u.provider === 'phone' ? 'Phone OTP' : 'Email/Pass');
+    document.getElementById('modalUserProvider').innerText = (u.provider === 'google' || u.provider === 'google.com') ? 'Google OAuth' : 'Email/Pass';
     document.getElementById('modalUserRefers').innerText = u.qualifiedReferCount || 0;
 
-    // Populate Orders Table inside Modal
     const ordersStream = document.getElementById('modalUserOrdersStream');
     if (!u.orders || Object.keys(u.orders).length === 0) {
         ordersStream.innerHTML = `<tr><td colspan="6" class="p-6 text-center text-slate-500 italic font-mono">No orders placed by this user yet.</td></tr>`;
@@ -1049,7 +1007,6 @@ window.viewAdminUserData = function(targetUid) {
         ordersStream.innerHTML = orderRows;
     }
 
-    // Populate Transactions Table inside Modal
     const txStream = document.getElementById('modalUserTxStream');
     if (!u.transactions || Object.keys(u.transactions).length === 0) {
         txStream.innerHTML = `<tr><td colspan="3" class="p-6 text-center text-slate-500 italic font-mono">No deposits recorded.</td></tr>`;
@@ -1181,7 +1138,7 @@ if (usrSearchInput) usrSearchInput.addEventListener('input', () => window.render
 
 window.commitStateVerification = function(targetUid, structId, txnValue, actionType) {
     const finalState = actionType === 'approve' ? 'Verified' : 'Cancelled';
-    
+
     update(ref(database, `users/${targetUid}/transactions/${structId}`), { internalState: finalState }).catch(() => {});
     set(ref(database, `global_deposits/${structId}`), null).catch(() => {});
 
@@ -1195,7 +1152,6 @@ window.commitStateVerification = function(targetUid, structId, txnValue, actionT
             });
         });
 
-        // Random Referral Bonus (₹1.00 to ₹2.00)
         const targetUserRef = ref(database, `users/${targetUid}`);
         get(targetUserRef).then((uSnap) => {
             if (uSnap.exists()) {
@@ -1203,12 +1159,12 @@ window.commitStateVerification = function(targetUid, structId, txnValue, actionT
                 if (uData.referredBy && !uData.referralRewarded) {
                     const randomBonus = parseFloat((Math.random() * 1.00 + 1.00).toFixed(2));
                     const referrerUid = uData.referredBy;
-                    
+
                     const referrerBalRef = ref(database, `users/${referrerUid}/walletBalance`);
                     get(referrerBalRef).then((rSnap) => {
                         const prevRefBal = rSnap.exists() ? parseFloat(rSnap.val()) : 0;
                         set(referrerBalRef, prevRefBal + randomBonus);
-                        
+
                         const refTxKey = 'tx_ref_' + Date.now();
                         const refTxPayload = {
                             structId: refTxKey,
@@ -1231,36 +1187,44 @@ window.commitStateVerification = function(targetUid, structId, txnValue, actionT
 window.handleEmailSignup = async function() {
     const emailInput = document.getElementById('registerEmail');
     const passInput = document.getElementById('registerPass');
+    const confirmPassInput = document.getElementById('registerConfirmPass');
     const email = emailInput ? emailInput.value.trim().toLowerCase() : '';
     const pass = passInput ? passInput.value.trim() : '';
+    const confirmPass = confirmPassInput ? confirmPassInput.value.trim() : '';
     const refCodeInput = document.getElementById('registerRefCode') ? document.getElementById('registerRefCode').value.trim().toUpperCase() : '';
-    
+
     const agreeCheckbox = document.getElementById('agree-terms');
     if (agreeCheckbox && !agreeCheckbox.checked) {
         window.showCustomToast("Please accept Privacy Mandate & Terms.", "error");
         return;
     }
 
-    if(!email || !pass) { 
-        window.showCustomToast("Please fill email & password.", "error"); 
-        return; 
+    if(!email || !pass || !confirmPass) {
+        window.showCustomToast("Please fill all email and password fields.", "error");
+        return;
     }
 
-    if(pass.length < 6) { 
-        window.showCustomToast("Password must be at least 6 characters long.", "error"); 
-        return; 
+    if(pass.length < 6) {
+        window.showCustomToast("Password must be at least 6 characters long.", "error");
+        return;
+    }
+
+    if(pass !== confirmPass) {
+        window.showCustomToast("Passwords do not match! Please re-verify.", "error");
+        return;
     }
 
     const btn = document.getElementById('register-submit-btn');
+    const originalContent = btn ? btn.innerHTML : '';
     if (btn) {
         btn.disabled = true;
-        btn.innerText = "Creating Account...";
+        btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-2"></i><span>Creating Account...</span>`;
     }
 
     try {
         const userCredential = await createUserWithEmailAndPassword(auth, email, pass);
         const newUid = userCredential.user.uid;
-        
+
         if (refCodeInput) {
             try {
                 const codeSnap = await get(ref(database, `referral_codes/${refCodeInput}`));
@@ -1275,7 +1239,7 @@ window.handleEmailSignup = async function() {
                 console.warn("Referral binding deferred:", refErr);
             }
         }
-        
+
         window.showCustomToast("Account created successfully!", "success");
     } catch(err) {
         console.error("Signup error:", err);
@@ -1285,31 +1249,51 @@ window.handleEmailSignup = async function() {
         else if (err.code === 'auth/weak-password') friendlyMsg = "Password is too weak. Minimum 6 characters required.";
         else if (err.code === 'auth/operation-not-allowed') friendlyMsg = "Email/Password accounts are disabled in Firebase Console!";
         else if (err.code === 'auth/network-request-failed') friendlyMsg = "Network error. Please check your internet connection.";
-        
+
         window.showCustomToast(friendlyMsg, "error");
     } finally {
         if (btn) {
             btn.disabled = false;
-            btn.innerText = "Verify & Create Session Token";
+            btn.innerHTML = originalContent || `<span>Create Account</span>`;
         }
     }
 };
 
 window.handleEmailLogin = function() {
-    const mobileOrEmailInput = document.getElementById('loginMobile');
-    const emailOrMobile = mobileOrEmailInput ? mobileOrEmailInput.value.trim() : '';
-    const pass = document.getElementById('loginPass').value.trim();
-    if(!emailOrMobile || !pass) { window.showCustomToast("Please supply login ID & passphrase.", "error"); return; }
+    const email = document.getElementById('loginEmail') ? document.getElementById('loginEmail').value.trim() : '';
+    const pass = document.getElementById('loginPass') ? document.getElementById('loginPass').value.trim() : '';
+    const robotCheck = document.getElementById('login-robot-check');
 
-    const loginId = emailOrMobile.includes('@') ? emailOrMobile : `${emailOrMobile}@sgsboost.net`;
+    if(!email || !pass) {
+        window.showCustomToast("Please enter email & password.", "error");
+        return;
+    }
 
-    signInWithEmailAndPassword(auth, loginId, pass)
+    if(robotCheck && !robotCheck.checked) {
+        window.showCustomToast("Please check 'I'm not a robot' box to continue.", "error");
+        return;
+    }
+
+    const btn = document.getElementById('login-submit-btn');
+    const originalContent = btn ? btn.innerHTML : '';
+    if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<i class="fa-solid fa-spinner animate-spin mr-2"></i><span>Logging In...</span>`;
+    }
+
+    signInWithEmailAndPassword(auth, email, pass)
         .catch(err => {
             let friendlyMsg = err.message;
             if (err.code === 'auth/wrong-password' || err.code === 'auth/user-not-found' || err.code === 'auth/invalid-credential') {
-                friendlyMsg = "Invalid mobile/email or password. Please try again.";
+                friendlyMsg = "Invalid email or password. Please try again.";
             }
             window.showCustomToast(friendlyMsg, "error");
+        })
+        .finally(() => {
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = originalContent || `<span>Login</span>`;
+            }
         });
 };
 
@@ -1322,205 +1306,23 @@ window.handlePasswordReset = function() {
 };
 
 window.handleLogout = function() {
-    signOut(auth).then(() => { 
+    signOut(auth).then(() => {
         const drawer = document.getElementById('sideDrawer');
-        if(drawer && !drawer.classList.contains('-translate-x-full')) window.toggleDrawer(); 
+        if(drawer && !drawer.classList.contains('-translate-x-full')) window.toggleDrawer();
         window.showCustomToast("Session Terminated Successfully.");
     });
 };
 
 document.getElementById('login-submit-btn').addEventListener('click', window.handleEmailLogin);
+document.getElementById('register-submit-btn').addEventListener('click', window.handleEmailSignup);
 document.getElementById('reset-submit-btn').addEventListener('click', window.handlePasswordReset);
 document.getElementById('drawer-logout-btn').addEventListener('click', window.handleLogout);
 document.getElementById('submit-deposit-btn').addEventListener('click', window.submitDepositToServer);
 document.getElementById('submit-order-pipeline-btn').addEventListener('click', window.executeSMMPipelineOrder);
 
-// 📱 FULL WORKING FIREBASE PHONE OTP DISPATCH & VERIFY LOGIC (RECAPTCHA FIXED)
-let confirmationResultGlobal = null;
-let otpCooldownTimer = 0;
-let otpInterval = null;
-
-window.initRecaptchaVerifier = function() {
-    if (window.recaptchaVerifierInstance) {
-        try {
-            window.recaptchaVerifierInstance.clear();
-        } catch (e) {}
-        window.recaptchaVerifierInstance = null;
-    }
-
-    const container = document.getElementById('recaptcha-container') || 'btn-send-otp';
-    window.recaptchaVerifierInstance = new RecaptchaVerifier(container, {
-        'size': 'invisible',
-        'callback': (response) => {
-            // Invisible reCAPTCHA verification passed
-        },
-        'expired-callback': () => {
-            window.showCustomToast("reCAPTCHA expired. Please try sending OTP again.", "error");
-            if (window.recaptchaVerifierInstance) {
-                window.recaptchaVerifierInstance.render().then(widgetId => {
-                    if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
-                }).catch(() => {});
-            }
-        }
-    }, auth);
-};
-
-window.sendPhoneOtpDirect = async function() {
-    const rawMobile = document.getElementById('registerMobile').value.trim();
-    const sendOtpBtn = document.getElementById('btn-send-otp');
-
-    if (otpCooldownTimer > 0) {
-        window.showCustomToast(`Please wait ${otpCooldownTimer}s before resending OTP.`, "error");
-        return;
-    }
-
-    if (!rawMobile || rawMobile.length !== 10 || !/^\d{10}$/.test(rawMobile)) {
-        window.showCustomToast("Kripya valid 10-digit mobile number dalein!", "error");
-        document.getElementById('registerMobile').focus();
-        return;
-    }
-
-    const phoneNumberWithCode = "+91" + rawMobile;
-    window.initRecaptchaVerifier();
-
-    if (sendOtpBtn) {
-        sendOtpBtn.disabled = true;
-        sendOtpBtn.innerHTML = `<i class="fa-solid fa-spinner animate-spin"></i> Sending...`;
-    }
-
-    try {
-        const appVerifier = window.recaptchaVerifierInstance;
-        confirmationResultGlobal = await signInWithPhoneNumber(auth, phoneNumberWithCode, appVerifier);
-        window.confirmationResult = confirmationResultGlobal;
-
-        window.showCustomToast("✅ OTP successfully mobile par send ho gaya!", "success");
-
-        otpCooldownTimer = 60;
-        otpInterval = setInterval(() => {
-            otpCooldownTimer--;
-            if (otpCooldownTimer > 0) {
-                sendOtpBtn.innerText = `Resend (${otpCooldownTimer}s)`;
-            } else {
-                clearInterval(otpInterval);
-                sendOtpBtn.disabled = false;
-                sendOtpBtn.innerText = "Send OTP";
-            }
-        }, 1000);
-
-        document.getElementById('registerOtp')?.focus();
-    } catch (error) {
-        console.error("SMS Dispatch Error:", error);
-        let errorMsg = error.message;
-        if (error.code === 'auth/quota-exceeded') {
-            errorMsg = "Daily SMS limit (10 SMS) exceed ho chuki hai. Firebase Console me Test Phone Number add karein ya Blaze Plan upgrade karein!";
-        } else if (error.code === 'auth/unauthorized-domain') {
-            errorMsg = "Domain authorized nahi hai Firebase Console -> Authentication -> Settings me!";
-        } else if (error.code === 'auth/invalid-phone-number') {
-            errorMsg = "Mobile number invalid hai!";
-        } else if (error.code === 'auth/captcha-check-failed') {
-            errorMsg = "reCAPTCHA verification fail ho gaya. Page refresh karke try karein!";
-        }
-        window.showCustomToast(errorMsg, "error");
-
-        if (window.recaptchaVerifierInstance) {
-            try {
-                window.recaptchaVerifierInstance.render().then(widgetId => {
-                    if (typeof grecaptcha !== 'undefined') grecaptcha.reset(widgetId);
-                }).catch(() => {});
-            } catch (e) {}
-        }
-        if (sendOtpBtn) {
-            sendOtpBtn.disabled = false;
-            sendOtpBtn.innerText = "Send OTP";
-        }
-    }
-};
-
-window.verifyOtpAndRegister = async function() {
-    const otpCode = document.getElementById('registerOtp')?.value.trim();
-    const rawMobile = document.getElementById('registerMobile')?.value.trim();
-    const password = document.getElementById('registerPass')?.value.trim();
-    const targetEmail = document.getElementById('registerEmail')?.value.trim();
-    const refCodeInput = document.getElementById('registerRefCode')?.value.trim().toUpperCase();
-    const submitBtn = document.getElementById('register-submit-btn');
-
-    if (!confirmationResultGlobal) {
-        window.showCustomToast("Pehle 'Send OTP' dabakar mobile par OTP mangwayein!", "error");
-        return;
-    }
-
-    if (!otpCode || otpCode.length !== 6) {
-        window.showCustomToast("Kripya 6-digit OTP code enter karein!", "error");
-        return;
-    }
-
-    if (!password || password.length < 6) {
-        window.showCustomToast("Password kam se kam 6 characters ka hona chahiye!", "error");
-        return;
-    }
-
-    if (submitBtn) {
-        submitBtn.disabled = true;
-        submitBtn.innerHTML = `<span>VERIFYING OTP...</span><i class="fa-solid fa-spinner animate-spin ml-2"></i>`;
-    }
-
-    try {
-        const result = await confirmationResultGlobal.confirm(otpCode);
-        const user = result.user;
-        const newUid = user.uid;
-        const userIdentifier = targetEmail || `${rawMobile}@sgsboost.net`;
-
-        // Update database with registered details
-        const updatePayload = {
-            mobile: rawMobile,
-            email: userIdentifier,
-            provider: 'phone',
-            walletBalance: 0.00,
-            createdAt: new Date().toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
-        };
-
-        if (refCodeInput) {
-            try {
-                const codeSnap = await get(ref(database, `referral_codes/${refCodeInput}`));
-                let referrerUid = codeSnap.exists() ? codeSnap.val() : null;
-                if (!referrerUid && refCodeInput.length >= 6) {
-                    referrerUid = refCodeInput.toLowerCase();
-                }
-                if (referrerUid && referrerUid !== newUid) {
-                    updatePayload.referredBy = referrerUid;
-                }
-            } catch (refErr) {
-                console.warn("Referral link error:", refErr);
-            }
-        }
-
-        await update(ref(database, `users/${newUid}`), updatePayload);
-        window.showCustomToast("🎉 OTP Verified! Account Successfully Created.", "success");
-    } catch (err) {
-        console.error("OTP Verification Error:", err);
-        window.showCustomToast("Invalid OTP code! Sahi OTP dalein ya dobara request karein.", "error");
-    } finally {
-        if (submitBtn) {
-            submitBtn.disabled = false;
-            submitBtn.innerText = "Verify OTP & Create Account";
-        }
-    }
-};
-
-const sendOtpBtnEl = document.getElementById('btn-send-otp');
-if (sendOtpBtnEl) {
-    sendOtpBtnEl.addEventListener('click', window.sendPhoneOtpDirect);
-}
-
-const registerSubmitBtnEl = document.getElementById('register-submit-btn');
-if (registerSubmitBtnEl) {
-    registerSubmitBtnEl.addEventListener('click', window.verifyOtpAndRegister);
-}
-
-// Smart SGS AI Knowledge Engine
 window.getSmartAiResponse = function(q) {
     const query = q.toLowerCase();
-    
+
     if (query.includes('deposit') || query.includes('add fund') || query.includes('utr') || query.includes('balance') || query.includes('pay') || query.includes('qr') || query.includes('money')) {
         return "To add balance, go to the 'Deposit' tab, enter your desired amount (₹), scan the generated UPI QR code to pay, and submit your Sender Name or 12-digit transaction UTR ID. The system will instantly auto-verify and credit your balance!";
     }
@@ -1545,7 +1347,7 @@ window.getSmartAiResponse = function(q) {
     if (query.includes('hi') || query.includes('hello') || query.includes('hey') || query.includes('sgs')) {
         return "Hello! I am SGS AI, your dedicated support assistant. How can I assist you with orders, deposits, or referral rewards today?";
     }
-    
+
     return "Thank you for reaching out! SGS SMM Engine provides automated social media growth (Views, Likes, Followers). You can easily deposit funds via UPI QR and place orders instantly on your dashboard.";
 };
 
@@ -1579,10 +1381,10 @@ window.dispatchAiQuery = async function() {
 window.renderAiBubble = function(text, isUser = false) {
     const chatStream = document.getElementById('aiMessagesStream');
     const bubble = document.createElement('div');
-    bubble.className = isUser 
-        ? "flex items-start space-x-2.5 justify-end animate-fade-in" 
+    bubble.className = isUser
+        ? "flex items-start space-x-2.5 justify-end animate-fade-in"
         : "flex items-start space-x-2.5 animate-fade-in";
-        
+
     if(isUser) {
         bubble.innerHTML = `
             <div class="bg-rose-500/20 border border-rose-500/30 p-3 rounded-2xl rounded-tl-none max-w-[80%] text-slate-200">
@@ -1626,7 +1428,6 @@ document.getElementById('drawer-toggle-btn').addEventListener('click', window.to
 document.getElementById('drawer-close-btn').addEventListener('click', window.toggleDrawer);
 document.getElementById('drawerOverlay').addEventListener('click', window.toggleDrawer);
 
-// Sidebar & Bottom Nav
 document.getElementById('tab-btn-dashboard').addEventListener('click', () => window.switchTab('dashboard'));
 document.getElementById('tab-btn-myorders').addEventListener('click', () => window.switchTab('myorders'));
 document.getElementById('tab-btn-addfunds').addEventListener('click', () => window.switchTab('addfunds'));
@@ -1655,7 +1456,6 @@ if (adminLogoutBtn) {
     });
 }
 
-// External Links
 const btnInsta = document.getElementById('btn-insta-social');
 if(btnInsta) btnInsta.addEventListener('click', () => window.open('https://www.instagram.com/t_sachin420?igsh=N3NtbTV5cnJ0aW50', '_blank'));
 
@@ -1668,18 +1468,17 @@ if(btnDesktopMain) btnDesktopMain.addEventListener('click', () => window.open('h
 const btnDesktopSecurity = document.getElementById('btn-desktop-security');
 if(btnDesktopSecurity) btnDesktopSecurity.addEventListener('click', () => window.showSecurityInfo());
 
-// Policy Modal Integration
 window.showPolicy = function(type) {
     const titleEl = document.getElementById('legalModalTitle');
     const contentEl = document.getElementById('legalModalContent');
     const modal = document.getElementById('legalModalOverlay');
-    
+
     if(type === 'privacy') {
         titleEl.innerHTML = `<i class="fa-solid fa-user-shield text-emerald-400"></i><span>SGS InstaBoost - Official Privacy Policy</span>`;
         contentEl.innerHTML = `
             <div class="space-y-4">
                 <p class="text-slate-400"><strong>Effective Date:</strong> July 24, 2026 | <strong>Last Updated:</strong> July 24, 2026</p>
-                
+
                 <p>Welcome to <strong>SGS InstaBoost</strong> ("we," "our," or "us"). We respect user privacy and are committed to complying with Google Play Developer Policies, User Data Policies, and global data protection standards.</p>
 
                 <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">1. Information We Collect</h4>
@@ -1734,7 +1533,7 @@ window.showPolicy = function(type) {
         contentEl.innerHTML = `
             <div class="space-y-4">
                 <p class="text-slate-400"><strong>Effective Date:</strong> July 24, 2026 | <strong>Last Updated:</strong> July 24, 2026</p>
-                
+
                 <p>Welcome to <strong>SGS InstaBoost</strong>. Please read these Terms of Agreement ("Terms", "Agreement") carefully before using our mobile application. By creating an account or using any service, you agree to be bound by these legal terms.</p>
 
                 <h4 class="font-bold text-white text-sm border-b border-slate-800 pb-1">1. Acceptance of Terms</h4>
@@ -1790,7 +1589,7 @@ window.showSecurityInfo = function() {
     const titleEl = document.getElementById('legalModalTitle');
     const contentEl = document.getElementById('legalModalContent');
     const modal = document.getElementById('legalModalOverlay');
-    
+
     titleEl.innerHTML = `<i class="fa-solid fa-fingerprint text-purple-400"></i><span>Security Commitments</span>`;
     contentEl.innerHTML = `
         <div class="space-y-4">
@@ -1804,7 +1603,6 @@ window.showSecurityInfo = function() {
 document.getElementById('btn-show-privacy').addEventListener('click', () => window.showPolicy('privacy'));
 document.getElementById('btn-show-terms').addEventListener('click', () => window.showPolicy('terms'));
 
-// Login Page triggers
 const btnLoginPrivacy = document.getElementById('btn-show-privacy-login');
 if (btnLoginPrivacy) btnLoginPrivacy.addEventListener('click', () => window.showPolicy('privacy'));
 
@@ -1818,7 +1616,6 @@ document.getElementById('btn-show-terms-3').addEventListener('click', () => wind
 document.getElementById('legal-close-btn').addEventListener('click', () => window.closeLegalModal());
 document.getElementById('legal-acknowledge-btn').addEventListener('click', () => window.closeLegalModal());
 
-// AI Assistant Widget Binds
 let isAiWidgetOpen = false;
 window.toggleAiAssistant = function() {
     const widget = document.getElementById('aiSupportWidget');
@@ -1851,7 +1648,6 @@ if (aiInputEl) {
     });
 }
 
-// Copy referral code
 const btnCopyRefCode = document.getElementById('btn-copy-ref-code');
 if (btnCopyRefCode) {
     btnCopyRefCode.addEventListener('click', () => {
@@ -1866,7 +1662,6 @@ if (btnCopyRefCode) {
     });
 }
 
-// Copy referral link
 const btnCopyRefLink = document.getElementById('btn-copy-ref');
 if (btnCopyRefLink) {
     btnCopyRefLink.addEventListener('click', () => {
@@ -1881,13 +1676,12 @@ if (btnCopyRefLink) {
     });
 }
 
-// Custom Toast Notifications
 window.showCustomToast = function(message, type = "info") {
     const container = document.getElementById('toastContainer');
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = "glass-panel p-4 rounded-2xl shadow-lg border-l-4 border-rose-500 text-xs font-mono text-slate-200 flex items-center justify-between gap-3 animate-fade-in transition duration-300 relative overflow-hidden";
-    
+
     let icon = '<i class="fa-solid fa-circle-info text-rose-400"></i>';
     if (type === "success" || message.toLowerCase().includes("success") || message.toLowerCase().includes("verified")) {
         toast.style.borderLeftColor = "#10b981";
@@ -1896,7 +1690,7 @@ window.showCustomToast = function(message, type = "info") {
         toast.style.borderLeftColor = "#f43f5e";
         icon = '<i class="fa-solid fa-triangle-exclamation text-rose-500 animate-bounce"></i>';
     }
-    
+
     toast.innerHTML = `
         <div class="flex items-center space-x-2.5">
             ${icon}
@@ -1904,7 +1698,7 @@ window.showCustomToast = function(message, type = "info") {
         </div>
         <button onclick="this.parentElement.remove()" class="text-slate-500 hover:text-slate-300 transition text-[10px] focus:outline-none"><i class="fa-solid fa-xmark"></i></button>
     `;
-    
+
     container.appendChild(toast);
     setTimeout(() => {
         if (toast && toast.parentElement) {
@@ -1918,11 +1712,9 @@ window.alert = function(msg) {
     window.showCustomToast(msg);
 };
 
-// Initialize Services & Default Tab
 window.updateServices();
 window.switchTab('dashboard');
 
-// --- App Guide & Tutorial Injection Code ---
 (() => {
     const openTutorial = () => {
         window.open('https://example.com', '_blank');
@@ -1973,7 +1765,6 @@ window.switchTab('dashboard');
     observer.observe(document.body, { childList: true, subtree: true });
 })();
 
-// 🔐 4-DIGIT UNIQUE UID GENERATOR & SYSTEM
 window.generateUniqueUserUID = async function() {
     let isUnique = false;
     let generatedUid = "";
@@ -1983,14 +1774,14 @@ window.generateUniqueUserUID = async function() {
     while (!isUnique && attempts < 50) {
         attempts++;
         generatedUid = Math.floor(1000 + Math.random() * 9000).toString();
-        
+
         try {
             const snapshot = await get(child(usersRef, `?orderBy="userUid"&equalTo="${generatedUid}"`));
             if (!snapshot.exists()) {
                 isUnique = true;
             }
         } catch (e) {
-            isUnique = true; 
+            isUnique = true;
         }
     }
     return generatedUid || Math.floor(1000 + Math.random() * 9000).toString();
@@ -1999,9 +1790,9 @@ window.generateUniqueUserUID = async function() {
 window.copyUserUIDToClipboard = function(elementId, btnElement) {
     const uidElement = document.getElementById(elementId);
     if (!uidElement) return;
-    
+
     const rawText = uidElement.innerText.replace('#', '').trim();
-    
+
     navigator.clipboard.writeText(rawText).then(() => {
         if (window.showCustomToast) {
             window.showCustomToast(`UID #${rawText} Copied to Clipboard!`, "success");
@@ -2043,11 +1834,11 @@ window.injectDrawerUIDCard = function(userUid) {
 const checkAndInjectUID = async (user) => {
     if (!user) return;
     const userDbRef = ref(database, 'users/' + user.uid);
-    
+
     try {
         const snapshot = await get(userDbRef);
         let currentUidVal = null;
-        
+
         if (snapshot.exists()) {
             const data = snapshot.val();
             if (data.userUid) {
@@ -2074,7 +1865,6 @@ auth.onAuthStateChanged((user) => {
     }
 });
 
-// 🎁 REFERRAL CHALLENGE SYSTEM
 window.injectReferralChallengeUI = function() {
     const referTabContainer = document.getElementById('tab-refer')?.querySelector('.glass-panel');
     if (referTabContainer && !document.getElementById('referChallengeCard')) {
@@ -2123,7 +1913,7 @@ window.showReferChallengeTerms = function() {
         const titleEl = document.getElementById('legalModalTitle');
         const contentEl = document.getElementById('legalModalContent');
         const modal = document.getElementById('legalModalOverlay');
-        
+
         titleEl.innerHTML = `<i class="fa-solid fa-gift text-amber-400"></i><span>ऑफर की शर्तें: 5 दोस्तों को शेयर करें और ₹5 कमाएं</span>`;
         contentEl.innerHTML = `
             <div class="space-y-3 font-sans text-xs">
@@ -2257,7 +2047,7 @@ window.commitStateVerification = function(targetUid, structId, txnValue, actionT
                         if (rSnap.exists()) {
                             const rData = rSnap.val();
                             const currentCount = rData.qualifiedReferCount || 0;
-                            
+
                             update(referrerRef, { qualifiedReferCount: currentCount + 1 });
                             update(targetUserRef, { countedForReferChallenge: true });
                         }
@@ -2276,7 +2066,6 @@ window.switchTab = function(targetId) {
     }
 };
 
-// 🔔 RE-ENTRY REFERRAL POPUP & DYNAMIC EMAIL DP SYNC
 window.injectLoginReferralPopupUI = function() {
     if (document.getElementById('loginReferralModalOverlay')) return;
 
@@ -2285,7 +2074,7 @@ window.injectLoginReferralPopupUI = function() {
     modalDiv.className = 'fixed inset-0 bg-[#030712]/90 z-[110] hidden items-center justify-center p-4 backdrop-blur-md transition-all duration-300';
     modalDiv.innerHTML = `
         <div class="glass-panel max-w-sm w-full rounded-[28px] p-6 space-y-4 border-amber-500/40 shadow-glow-amber relative text-center overflow-hidden animate-fade-in">
-            
+
             <button type="button" onclick="window.closeLoginReferralPopup()" class="absolute top-4 right-4 text-slate-400 hover:text-rose-500 p-1.5 hover:bg-slate-900 rounded-xl transition">
                 <i class="fa-solid fa-xmark text-lg"></i>
             </button>
@@ -2381,10 +2170,10 @@ window.syncUserProfilePicture = function(user) {
     if (user.photoURL && user.photoURL.trim() !== '' && !user.photoURL.includes('dicebear')) {
         drawerLogoImg.src = user.photoURL;
     } else {
-        const cleanEmail = (user.email || user.phoneNumber || user.uid || 'sgsuser').trim().toLowerCase();
+        const cleanEmail = (user.email || user.uid || 'sgsuser').trim().toLowerCase();
         const avatarUrl = `https://api.dicebear.com/7.x/identicon/svg?seed=${encodeURIComponent(cleanEmail)}&backgroundColor=0d1220`;
         drawerLogoImg.src = avatarUrl;
-        
+
         drawerLogoImg.onerror = function() {
             this.onerror = null;
             this.src = `https://api.dicebear.com/7.x/bottts/svg?seed=${encodeURIComponent(user.uid)}`;
@@ -2392,14 +2181,13 @@ window.syncUserProfilePicture = function(user) {
     }
 };
 
-// 📢 SLIDING PUSH HEADER NOTICE SYSTEM (USER & ADMIN)
 window.injectNoticeBoardUI = function() {
     if (document.getElementById('systemNoticePushBanner')) return;
 
     const bannerDiv = document.createElement('div');
     bannerDiv.id = 'systemNoticePushBanner';
     bannerDiv.className = 'w-full bg-[#090d16]/95 border-b border-rose-500/40 shadow-glow-rose backdrop-blur-xl transition-all duration-500 ease-in-out overflow-hidden max-h-0 opacity-0 z-[100] relative';
-    
+
     bannerDiv.innerHTML = `
         <div class="absolute top-0 left-0 right-0 h-[2px] bg-gradient-to-r from-rose-500 via-amber-500 to-rose-500 animate-pulse"></div>
         <div class="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between gap-3">
@@ -2435,7 +2223,7 @@ window.openNoticeBoard = function(noticeHtml) {
 
     if (bodyContent && banner) {
         bodyContent.innerHTML = noticeHtml || "";
-        
+
         banner.style.maxHeight = '200px';
         banner.classList.remove('opacity-0');
         banner.classList.add('opacity-100');
@@ -2463,7 +2251,7 @@ const listenAndShowNotice = () => {
     onValue(noticeRef, (snapshot) => {
         const noticeText = snapshot.exists() ? snapshot.val() : "";
         window.activeSystemNoticeText = noticeText;
-        
+
         if (noticeText && noticeText.trim() !== "") {
             window.openNoticeBoard(noticeText);
         }
@@ -2513,49 +2301,6 @@ window.injectAdminNoticeEditorUI = function() {
             </div>
         `;
         parentContainer.appendChild(noticeSec);
-    }
-};
-
-const originalSwitchAdminTab = window.switchAdminTab;
-window.switchAdminTab = function(tabName) {
-    if (originalSwitchAdminTab) originalSwitchAdminTab(tabName);
-    
-    const depSec = document.getElementById('adminDepositsSection');
-    const usrSec = document.getElementById('adminUsersSection');
-    const noticeSec = document.getElementById('adminNoticeSection');
-    const depBtn = document.getElementById('admin-tab-deposits-btn');
-    const usrBtn = document.getElementById('admin-tab-users-btn');
-    const noticeBtn = document.getElementById('admin-tab-notice-btn');
-
-    if (tabName === 'deposits') {
-        if (depSec) depSec.classList.remove('hidden');
-        if (usrSec) usrSec.classList.add('hidden');
-        if (noticeSec) noticeSec.classList.add('hidden');
-        if (depBtn) depBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
-        if (usrBtn) usrBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
-        if (noticeBtn) noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
-    } else if (tabName === 'users') {
-        if (depSec) depSec.classList.add('hidden');
-        if (usrSec) usrSec.classList.remove('hidden');
-        if (noticeSec) noticeSec.classList.add('hidden');
-        if (usrBtn) usrBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
-        if (depBtn) depBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
-        if (noticeBtn) noticeBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
-        window.renderAdminUsersList();
-    } else if (tabName === 'notice') {
-        if (depSec) depSec.classList.add('hidden');
-        if (usrSec) usrSec.classList.add('hidden');
-        if (noticeSec) {
-            noticeSec.classList.remove('hidden');
-            get(ref(database, 'system_notice/content')).then((snap) => {
-                if (snap.exists() && document.getElementById('adminNoticeInput')) {
-                    document.getElementById('adminNoticeInput').value = snap.val();
-                }
-            });
-        }
-        if (noticeBtn) noticeBtn.className = "bg-purple-600 text-white font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition shadow-glow-purple";
-        if (depBtn) depBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
-        if (usrBtn) usrBtn.className = "bg-slate-900 hover:bg-slate-800 border border-slate-800 text-slate-300 font-bold px-4 py-2 rounded-xl text-xs uppercase tracking-wider transition";
     }
 };
 
